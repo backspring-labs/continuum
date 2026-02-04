@@ -1,0 +1,27 @@
+[plugin]
+id = "continuum.sample_signal"
+name = "Signal Dashboard"
+version = "1.0.0"
+description = "Sample signal monitoring dashboard with metrics and timeline views"
+required = false
+
+[plugin.ui]
+tag_prefix = "continuum-sample-signal"
+
+[[contributions.panel]]
+slot = "ui.slot.main"
+perspective = "signal"
+component = "continuum-sample-signal-metrics"
+priority = 200
+
+[[contributions.panel]]
+slot = "ui.slot.main"
+perspective = "signal"
+component = "continuum-sample-signal-timeline"
+priority = 100
+
+[[contributions.panel]]
+slot = "ui.slot.right_rail"
+perspective = "signal"
+component = "continuum-sample-signal-alerts"
+priority = 100

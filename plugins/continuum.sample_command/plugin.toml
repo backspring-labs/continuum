@@ -1,0 +1,21 @@
+[plugin]
+id = "continuum.sample_command"
+name = "Sample Commands"
+version = "1.0.0"
+description = "Sample command contributions for testing command execution"
+required = false
+
+[plugin.ui]
+tag_prefix = "continuum-sample-command"
+
+[[contributions.command]]
+id = "open_command_palette"
+label = "Open Command Palette"
+shortcut = "Ctrl+K"
+action = "open_command_palette"
+
+[[contributions.command]]
+id = "sample_action"
+label = "Sample Action"
+shortcut = "Ctrl+Shift+S"
+action = "sample_action"

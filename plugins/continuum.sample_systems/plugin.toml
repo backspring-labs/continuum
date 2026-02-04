@@ -1,0 +1,27 @@
+[plugin]
+id = "continuum.sample_systems"
+name = "Systems Dashboard"
+version = "1.0.0"
+description = "System administration panels with plugin status and registry views"
+required = false
+
+[plugin.ui]
+tag_prefix = "continuum-sample-systems"
+
+[[contributions.panel]]
+slot = "ui.slot.main"
+perspective = "systems"
+component = "continuum-sample-systems-plugins"
+priority = 200
+
+[[contributions.panel]]
+slot = "ui.slot.main"
+perspective = "systems"
+component = "continuum-sample-systems-registry"
+priority = 100
+
+[[contributions.panel]]
+slot = "ui.slot.right_rail"
+perspective = "systems"
+component = "continuum-sample-systems-diagnostics"
+priority = 100

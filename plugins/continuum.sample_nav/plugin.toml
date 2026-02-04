@@ -1,0 +1,81 @@
+[plugin]
+id = "continuum.sample_nav"
+name = "Navigation"
+version = "1.0.0"
+description = "Navigation contributions for perspective switching and actions"
+required = false
+
+[plugin.ui]
+tag_prefix = "continuum-sample-nav"
+
+# Perspective switchers
+[[contributions.nav]]
+slot = "ui.slot.left_nav"
+label = "Signal"
+icon = "activity"
+priority = 500
+
+[contributions.nav.target]
+type = "panel"
+panel_id = "signal"
+
+[[contributions.nav]]
+slot = "ui.slot.left_nav"
+label = "Research"
+icon = "search"
+priority = 400
+
+[contributions.nav.target]
+type = "panel"
+panel_id = "research"
+
+[[contributions.nav]]
+slot = "ui.slot.left_nav"
+label = "Time"
+icon = "clock"
+priority = 300
+
+[contributions.nav.target]
+type = "panel"
+panel_id = "time"
+
+[[contributions.nav]]
+slot = "ui.slot.left_nav"
+label = "Discovery"
+icon = "compass"
+priority = 200
+
+[contributions.nav.target]
+type = "panel"
+panel_id = "discovery"
+
+[[contributions.nav]]
+slot = "ui.slot.left_nav"
+label = "Systems"
+icon = "settings"
+priority = 100
+
+[contributions.nav.target]
+type = "panel"
+panel_id = "systems"
+
+# Action triggers
+[[contributions.nav]]
+slot = "ui.slot.left_nav"
+label = "Commands"
+icon = "terminal"
+priority = 50
+
+[contributions.nav.target]
+type = "command"
+command_id = "open_command_palette"
+
+[[contributions.nav]]
+slot = "ui.slot.left_nav"
+label = "Chat"
+icon = "message-circle"
+priority = 40
+
+[contributions.nav.target]
+type = "drawer"
+drawer_id = "agent_chat"

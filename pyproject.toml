@@ -4,6 +4,10 @@ version = "0.1.0"
 description = "Plugin-driven control-plane UI shell"
 requires-python = ">=3.11"
 dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.0",
+    "tomli>=2.0.0",
     # Switchboard - use git reference for CI/production
     # For local dev, install with: pip install -e ~/Code/switchboard
     # "switchboard @ git+https://github.com/<owner>/switchboard.git",
@@ -13,9 +17,13 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
+    "httpx>=0.26.0",
     "ruff>=0.2",
     "mypy>=1.8",
 ]
+
+[project.scripts]
+continuum = "continuum.cli:main"
 
 [build-system]
 requires = ["hatchling"]

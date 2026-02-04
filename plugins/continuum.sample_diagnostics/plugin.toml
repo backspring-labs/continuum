@@ -1,0 +1,14 @@
+[plugin]
+id = "continuum.sample_diagnostics"
+name = "Sample Diagnostics"
+version = "1.0.0"
+description = "Sample diagnostic contribution with health checks"
+required = false
+
+[plugin.ui]
+tag_prefix = "continuum-sample-diagnostics"
+
+[[contributions.diagnostic]]
+id = "sample_health"
+label = "Sample Health Check"
+check = "sample_health_check"

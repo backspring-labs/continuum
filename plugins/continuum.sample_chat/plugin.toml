@@ -1,0 +1,15 @@
+[plugin]
+id = "continuum.sample_chat"
+name = "Agent Chat"
+version = "1.0.0"
+description = "Agent chat drawer for conversational interface"
+required = false
+
+[plugin.ui]
+tag_prefix = "continuum-sample-chat"
+
+[[contributions.drawer]]
+id = "agent_chat"
+component = "continuum-sample-chat-drawer"
+title = "Agent Chat"
+width = "400px"
