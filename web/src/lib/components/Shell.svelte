@@ -63,6 +63,14 @@
 				break;
 		}
 	}
+
+	function toggleDrawer() {
+		// Toggle the first available drawer (settings drawer in V1)
+		const settingsDrawer = $drawerContributions.find(d => d.id === 'settings_drawer');
+		if (settingsDrawer) {
+			activeDrawer = activeDrawer?.id === settingsDrawer.id ? null : settingsDrawer;
+		}
+	}
 </script>
 
 {#if $registryLoading}
@@ -152,6 +160,7 @@
 			<CommandPalette
 				commands={$commands}
 				onClose={() => showCommandPalette = false}
+				onToggleDrawer={toggleDrawer}
 			/>
 		{/if}
 

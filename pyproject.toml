@@ -8,6 +8,8 @@ dependencies = [
     "uvicorn[standard]>=0.27.0",
     "pydantic>=2.5.0",
     "tomli>=2.0.0",
+    "jsonschema>=4.21.0",
+    "httpx>=0.26.0",
     # Switchboard - use git reference for CI/production
     # For local dev, install with: pip install -e ~/Code/switchboard
     # "switchboard @ git+https://github.com/<owner>/switchboard.git",
@@ -18,6 +20,8 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "httpx>=0.26.0",
+    "requests>=2.31",
+    "pytest-playwright>=0.7",
     "ruff>=0.2",
     "mypy>=1.8",
 ]

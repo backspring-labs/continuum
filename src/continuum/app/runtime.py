@@ -8,9 +8,12 @@ from typing import Any
 from continuum.domain.lifecycle import LifecycleManager, LifecycleState
 from continuum.domain.perspectives import get_all_perspectives, PerspectiveSpec
 from continuum.domain.regions import get_all_regions, RegionSpec
+from continuum.domain.auth import UserContext
+from continuum.domain.commands import CommandExecuteRequest, CommandExecuteResult
 from continuum.app.discovery import discover_plugins, DiscoveredPlugin
 from continuum.app.loader import load_plugins, LoadedPlugin
 from continuum.app.registry import build_registry, ResolvedRegistry
+from continuum.app.command_bus import CommandBus
 
 
 @dataclass
@@ -25,6 +28,7 @@ class PluginStatus:
     required: bool
     error: str | None = None
     contribution_count: int = 0
+    load_time_ms: float = 0.0
 
 
 @dataclass
@@ -56,6 +60,7 @@ class ContinuumRuntime:
         self._discovered_plugins: list[DiscoveredPlugin] = []
         self._loaded_plugins: list[LoadedPlugin] = []
         self._resolved_registry: ResolvedRegistry | None = None
+        self._command_bus = CommandBus()
 
     async def boot(self) -> None:
         """
@@ -159,6 +164,7 @@ class ContinuumRuntime:
                     required=discovered.manifest.plugin.required,
                     error=loaded.error,
                     contribution_count=len(loaded.contributions),
+                    load_time_ms=loaded.load_time_ms,
                 )
                 self._registry.plugins.append(status)
 
@@ -200,6 +206,9 @@ class ContinuumRuntime:
         self._registry.warnings.extend(self._resolved_registry.report.warnings)
         self._registry.errors.extend(self._resolved_registry.report.errors)
 
+        # Initialize command bus with resolved commands
+        self._command_bus.load_commands_from_registry(self._registry.commands)
+
     def _should_degrade(self) -> bool:
         """Check if runtime should enter DEGRADED state."""
         # Check for required plugin failures
@@ -239,6 +248,31 @@ class ContinuumRuntime:
         """Get regions with their contributions."""
         return self._registry.regions
 
+    def get_regions_with_bundle_urls(self) -> dict[str, list[dict[str, Any]]]:
+        """Get regions with bundle_url added to each contribution."""
+        # Build a map of plugin_id -> bundle_url
+        bundle_urls: dict[str, str | None] = {}
+        for discovered in self._discovered_plugins:
+            bundle = discovered.manifest.plugin.ui.bundle
+            if bundle:
+                bundle_urls[discovered.plugin_id] = f"/plugins/{discovered.plugin_id}/assets/{bundle}"
+            else:
+                bundle_urls[discovered.plugin_id] = None
+
+        # Augment each contribution with bundle_url
+        result: dict[str, list[dict[str, Any]]] = {}
+        for slot_id, contributions in self._registry.regions.items():
+            augmented_contributions = []
+            for contrib in contributions:
+                augmented = dict(contrib)
+                plugin_id = augmented.get("plugin_id")
+                if plugin_id and plugin_id in bundle_urls:
+                    augmented["bundle_url"] = bundle_urls[plugin_id]
+                augmented_contributions.append(augmented)
+            result[slot_id] = augmented_contributions
+
+        return result
+
     def get_commands(self) -> list[dict[str, Any]]:
         """Get registered commands."""
         return self._registry.commands
@@ -255,6 +289,7 @@ class ContinuumRuntime:
                 "required": p.required,
                 "error": p.error,
                 "contribution_count": p.contribution_count,
+                "load_time_ms": p.load_time_ms,
             }
             for p in self._registry.plugins
         ]
@@ -274,3 +309,26 @@ class ContinuumRuntime:
     def get_errors(self) -> list[str]:
         """Get errors."""
         return self._registry.errors
+
+    # Command execution methods
+
+    async def execute_command(
+        self, request: CommandExecuteRequest, user: UserContext | None = None
+    ) -> CommandExecuteResult:
+        """
+        Execute a command.
+
+        Args:
+            request: The execution request
+            user: The user context (defaults to anonymous)
+
+        Returns:
+            CommandExecuteResult with status and result/error
+        """
+        if user is None:
+            user = UserContext.anonymous()
+        return await self._command_bus.execute(request, user)
+
+    def get_audit_log(self, limit: int = 100) -> list[dict[str, Any]]:
+        """Get recent command audit log entries."""
+        return self._command_bus.get_audit_log(limit)

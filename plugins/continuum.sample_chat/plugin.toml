@@ -7,6 +7,7 @@ required = false
 
 [plugin.ui]
 tag_prefix = "continuum-sample-chat"
+bundle = "plugin.js"
 
 [[contributions.drawer]]
 id = "agent_chat"

@@ -1,3 +1,5 @@
+<svelte:options customElement="continuum-sample-chat-drawer" />
+
 <script lang="ts">
 	interface Message {
 		role: 'user' | 'assistant';
@@ -6,7 +8,7 @@
 	}
 
 	let messages = $state<Message[]>([
-		{ role: 'assistant', content: 'Hello! I\'m your Continuum assistant. How can I help you today?', time: '10:00' },
+		{ role: 'assistant', content: "Hello! I'm your Continuum assistant. How can I help you today?", time: '10:00' },
 	]);
 	let input = $state('');
 	let sending = $state(false);
@@ -33,10 +35,10 @@
 		await new Promise(resolve => setTimeout(resolve, 1000));
 
 		const responses = [
-			'I can help you with that! Let me check the system status.',
-			'That\'s a great question. Based on the current registry state...',
-			'I\'ve analyzed the request. Here\'s what I found...',
-			'Sure! I\'ll look into that for you.',
+			"I can help you with that! Let me check the system status.",
+			"That's a great question. Based on the current registry state...",
+			"I've analyzed the request. Here's what I found...",
+			"Sure! I'll look into that for you.",
 		];
 
 		messages = [...messages, {
@@ -95,15 +97,17 @@
 		flex-direction: column;
 		height: 100%;
 		min-height: 400px;
+		font-family: var(--continuum-font-sans, system-ui, sans-serif);
+		color: var(--continuum-text-primary, #e8e8e8);
 	}
 
 	.messages {
 		flex: 1;
 		overflow-y: auto;
-		padding: var(--continuum-space-md);
+		padding: var(--continuum-space-md, 16px);
 		display: flex;
 		flex-direction: column;
-		gap: var(--continuum-space-md);
+		gap: var(--continuum-space-md, 16px);
 	}
 
 	.message {
@@ -123,39 +127,39 @@
 	}
 
 	.message-bubble {
-		padding: var(--continuum-space-sm) var(--continuum-space-md);
-		border-radius: var(--continuum-radius-lg);
-		font-size: var(--continuum-font-size-sm);
+		padding: var(--continuum-space-sm, 8px) var(--continuum-space-md, 16px);
+		border-radius: var(--continuum-radius-lg, 12px);
+		font-size: var(--continuum-font-size-sm, 12px);
 		line-height: 1.5;
 	}
 
 	.message[data-role="user"] .message-bubble {
-		background: var(--continuum-accent-primary);
+		background: var(--continuum-accent-primary, #58a6ff);
 		color: white;
-		border-bottom-right-radius: var(--continuum-radius-sm);
+		border-bottom-right-radius: var(--continuum-radius-sm, 4px);
 	}
 
 	.message[data-role="assistant"] .message-bubble {
-		background: var(--continuum-bg-tertiary);
-		border-bottom-left-radius: var(--continuum-radius-sm);
+		background: var(--continuum-bg-tertiary, #12121f);
+		border-bottom-left-radius: var(--continuum-radius-sm, 4px);
 	}
 
 	.message-time {
-		font-size: var(--continuum-font-size-xs);
-		color: var(--continuum-text-muted);
+		font-size: var(--continuum-font-size-xs, 11px);
+		color: var(--continuum-text-muted, #6e6e80);
 		margin-top: 2px;
 	}
 
 	.typing {
 		display: flex;
 		gap: 4px;
-		padding: var(--continuum-space-sm) var(--continuum-space-md);
+		padding: var(--continuum-space-sm, 8px) var(--continuum-space-md, 16px);
 	}
 
 	.dot {
 		width: 6px;
 		height: 6px;
-		background: var(--continuum-text-muted);
+		background: var(--continuum-text-muted, #6e6e80);
 		border-radius: 50%;
 		animation: bounce 1.4s infinite ease-in-out;
 	}
@@ -170,34 +174,34 @@
 
 	.input-area {
 		display: flex;
-		gap: var(--continuum-space-sm);
-		padding: var(--continuum-space-md);
-		border-top: 1px solid var(--continuum-border);
-		background: var(--continuum-bg-tertiary);
+		gap: var(--continuum-space-sm, 8px);
+		padding: var(--continuum-space-md, 16px);
+		border-top: 1px solid var(--continuum-border, #2d2d44);
+		background: var(--continuum-bg-tertiary, #12121f);
 	}
 
 	.input-area textarea {
 		flex: 1;
-		padding: var(--continuum-space-sm);
-		background: var(--continuum-bg-secondary);
-		border: 1px solid var(--continuum-border);
-		border-radius: var(--continuum-radius-md);
-		color: var(--continuum-text-primary);
+		padding: var(--continuum-space-sm, 8px);
+		background: var(--continuum-bg-secondary, #1a1a2e);
+		border: 1px solid var(--continuum-border, #2d2d44);
+		border-radius: var(--continuum-radius-md, 8px);
+		color: var(--continuum-text-primary, #e8e8e8);
 		font-family: inherit;
-		font-size: var(--continuum-font-size-sm);
+		font-size: var(--continuum-font-size-sm, 12px);
 		resize: none;
 		outline: none;
 	}
 
 	.input-area textarea:focus {
-		border-color: var(--continuum-accent-primary);
+		border-color: var(--continuum-accent-primary, #58a6ff);
 	}
 
 	.input-area button {
-		padding: var(--continuum-space-sm) var(--continuum-space-md);
-		background: var(--continuum-accent-primary);
+		padding: var(--continuum-space-sm, 8px) var(--continuum-space-md, 16px);
+		background: var(--continuum-accent-primary, #58a6ff);
 		border: none;
-		border-radius: var(--continuum-radius-md);
+		border-radius: var(--continuum-radius-md, 8px);
 		color: white;
 		font-weight: 600;
 		cursor: pointer;

@@ -32,6 +32,12 @@ export interface Contribution {
 	width?: string;
 	shortcut?: string;
 	action?: string;
+	bundle_url?: string | null;
+	danger_level?: 'safe' | 'confirm' | 'danger';
+	required_capabilities?: string[];
+	dry_run_supported?: boolean;
+	input_schema?: Record<string, unknown>;
+	timeout_ms?: number;
 }
 
 export interface PluginStatus {

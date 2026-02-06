@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Contribution } from '$stores/registry';
-	import { getComponent } from './plugins';
+	import ComponentLoader from './ComponentLoader.svelte';
+	import { loadBundle } from '$lib/services/pluginLoader';
 
 	interface Props {
 		contribution: Contribution;
@@ -9,8 +10,16 @@
 
 	let { contribution, onClose }: Props = $props();
 
-	const width = contribution.width ?? '400px';
-	const Component = contribution.component ? getComponent(contribution.component) : undefined;
+	let width = $derived(contribution.width ?? '400px');
+
+	// Preload bundle when drawer opens
+	$effect(() => {
+		if (contribution.bundle_url) {
+			loadBundle(contribution.bundle_url).catch(() => {
+				// Error handled by ComponentLoader
+			});
+		}
+	});
 
 	function handleOverlayClick() {
 		onClose();
@@ -25,26 +34,21 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="drawer-overlay" onclick={handleOverlayClick}>
+<div class="drawer-overlay" role="button" tabindex="-1" onclick={handleOverlayClick} onkeydown={(e) => e.key === 'Enter' && handleOverlayClick()}>
 	<aside
 		class="drawer"
 		style="width: {width}"
 		onclick={(e) => e.stopPropagation()}
+		onkeydown={(e) => e.stopPropagation()}
+		role="dialog"
+		aria-modal="true"
 	>
 		<header class="drawer-header">
 			<h2>{contribution.title ?? contribution.id}</h2>
-			<button class="close-btn" onclick={onClose}>×</button>
+			<button class="close-btn" onclick={onClose}>\u00d7</button>
 		</header>
 		<div class="drawer-content">
-			{#if Component}
-				<Component />
-			{:else}
-				<div class="placeholder">
-					<p class="tag">&lt;{contribution.component}&gt;</p>
-					<p>Drawer component not loaded</p>
-					<p class="meta">Plugin: {contribution.plugin_id}</p>
-				</div>
-			{/if}
+			<ComponentLoader {contribution} />
 		</div>
 	</aside>
 </div>
@@ -109,25 +113,5 @@
 	.drawer-content {
 		flex: 1;
 		overflow-y: auto;
-	}
-
-	.placeholder {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		height: 200px;
-		text-align: center;
-		color: var(--continuum-text-secondary);
-	}
-
-	.placeholder .tag {
-		font-family: var(--continuum-font-mono);
-		color: var(--continuum-accent-primary);
-	}
-
-	.placeholder .meta {
-		font-size: var(--continuum-font-size-xs);
-		color: var(--continuum-text-muted);
 	}
 </style>

@@ -8,7 +8,8 @@ export default defineConfig({
 		proxy: {
 			'/api': 'http://localhost:4040',
 			'/health': 'http://localhost:4040',
-			'/diagnostics': 'http://localhost:4040'
+			'/diagnostics': 'http://localhost:4040',
+			'/plugins': 'http://localhost:4040'
 		}
 	}
 });

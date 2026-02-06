@@ -7,6 +7,7 @@ required = false
 
 [plugin.ui]
 tag_prefix = "continuum-sample-systems"
+bundle = "plugin.js"
 
 [[contributions.panel]]
 slot = "ui.slot.main"
@@ -19,6 +20,18 @@ slot = "ui.slot.main"
 perspective = "systems"
 component = "continuum-sample-systems-registry"
 priority = 100
+
+[[contributions.panel]]
+slot = "ui.slot.main"
+perspective = "systems"
+component = "continuum-sample-systems-audit"
+priority = 50
+
+[[contributions.panel]]
+slot = "ui.slot.right_rail"
+perspective = "systems"
+component = "continuum-sample-systems-health"
+priority = 200
 
 [[contributions.panel]]
 slot = "ui.slot.right_rail"

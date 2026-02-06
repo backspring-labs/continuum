@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Contribution } from '$stores/registry';
-	import { getComponent } from './plugins';
-	import PanelPlaceholder from './PanelPlaceholder.svelte';
+	import ComponentLoader from './ComponentLoader.svelte';
+	import { preloadBundles } from '$lib/services/pluginLoader';
 
 	interface Props {
 		slotId: string;
@@ -9,18 +9,24 @@
 	}
 
 	let { slotId, contributions }: Props = $props();
+
+	// Preload all bundles for this slot when contributions change
+	$effect(() => {
+		const bundleUrls = new Set<string>();
+		for (const contribution of contributions) {
+			if (contribution.bundle_url) {
+				bundleUrls.add(contribution.bundle_url);
+			}
+		}
+		if (bundleUrls.size > 0) {
+			preloadBundles(bundleUrls);
+		}
+	});
 </script>
 
 <div class="region-slot" data-slot={slotId}>
 	{#each contributions as contribution (contribution.plugin_id + '-' + (contribution.component ?? contribution.id))}
-		{@const Component = contribution.component ? getComponent(contribution.component) : undefined}
-		{#if Component}
-			<div class="contribution" data-plugin={contribution.plugin_id}>
-				<Component />
-			</div>
-		{:else}
-			<PanelPlaceholder {contribution} />
-		{/if}
+		<ComponentLoader {contribution} />
 	{/each}
 
 	{#if contributions.length === 0}
@@ -35,10 +41,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--continuum-space-md);
-	}
-
-	.contribution {
-		display: block;
 	}
 
 	.empty-slot {

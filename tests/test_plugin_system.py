@@ -195,7 +195,7 @@ class TestIntegration:
         all_contributions = []
         for loaded in load_result.plugins:
             all_contributions.extend(loaded.contributions)
-        assert len(all_contributions) == 17  # Total from all sample plugins
+        assert len(all_contributions) == 24  # Total from all sample plugins
 
         # Build registry
         registry = build_registry(all_contributions)

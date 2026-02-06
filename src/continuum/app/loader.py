@@ -83,14 +83,25 @@ def load_plugins(
             discovery_index=plugin.discovery_index,
         )
 
+        # Check if this is a required plugin
+        is_required = plugin.manifest.plugin.required
+
+        def record_failure(error_msg: str) -> None:
+            """Record a plugin failure as error (required) or warning (optional)."""
+            loaded.status = "FAILED"
+            loaded.error = error_msg
+            msg = f"Plugin {plugin.plugin_id}: {error_msg}"
+            if is_required:
+                result.errors.append(msg)
+            else:
+                result.warnings.append(msg)
+
         try:
             # Look for __init__.py in plugin directory
             init_path = plugin.directory / "__init__.py"
 
             if not init_path.exists():
-                loaded.status = "FAILED"
-                loaded.error = f"No __init__.py found in {plugin.directory}"
-                result.errors.append(f"Plugin {plugin.plugin_id}: {loaded.error}")
+                record_failure(f"No __init__.py found in {plugin.directory}")
                 result.plugins.append(loaded)
                 continue
 
@@ -99,9 +110,7 @@ def load_plugins(
 
             spec = importlib.util.spec_from_file_location(module_name, init_path)
             if spec is None or spec.loader is None:
-                loaded.status = "FAILED"
-                loaded.error = f"Could not create module spec for {init_path}"
-                result.errors.append(f"Plugin {plugin.plugin_id}: {loaded.error}")
+                record_failure(f"Could not create module spec for {init_path}")
                 result.plugins.append(loaded)
                 continue
 
@@ -123,9 +132,7 @@ def load_plugins(
             loaded.status = "LOADED"
 
         except Exception as e:
-            loaded.status = "FAILED"
-            loaded.error = str(e)
-            result.errors.append(f"Plugin {plugin.plugin_id}: {loaded.error}")
+            record_failure(str(e))
 
         finally:
             loaded.load_time_ms = (time.perf_counter() - start_time) * 1000

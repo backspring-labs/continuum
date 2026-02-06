@@ -26,6 +26,22 @@ def register(ctx):
         "priority": 100,
     })
 
+    # Audit log panel
+    ctx.register_contribution("panel", {
+        "slot": "ui.slot.main",
+        "perspective": "systems",
+        "component": "continuum-sample-systems-audit",
+        "priority": 50,
+    })
+
+    # Health dashboard in right rail (top)
+    ctx.register_contribution("panel", {
+        "slot": "ui.slot.right_rail",
+        "perspective": "systems",
+        "component": "continuum-sample-systems-health",
+        "priority": 200,
+    })
+
     # Diagnostics panel in right rail
     ctx.register_contribution("panel", {
         "slot": "ui.slot.right_rail",

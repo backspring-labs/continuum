@@ -1,3 +1,5 @@
+<svelte:options customElement="continuum-sample-signal-metrics" />
+
 <script lang="ts">
 	import { onMount } from 'svelte';
 
@@ -25,7 +27,7 @@
 <div class="metrics-panel">
 	<header class="panel-header">
 		<h3>Signal Metrics</h3>
-		<span class="live-indicator">● Live</span>
+		<span class="live-indicator">Live</span>
 	</header>
 	<div class="metrics-grid">
 		{#each metrics as metric}
@@ -40,32 +42,38 @@
 
 <style>
 	.metrics-panel {
-		background: var(--continuum-bg-secondary);
-		border: 1px solid var(--continuum-border);
-		border-radius: var(--continuum-radius-md);
+		background: var(--continuum-bg-secondary, #1a1a2e);
+		border: 1px solid var(--continuum-border, #2d2d44);
+		border-radius: var(--continuum-radius-md, 8px);
 		overflow: hidden;
+		font-family: var(--continuum-font-sans, system-ui, sans-serif);
+		color: var(--continuum-text-primary, #e8e8e8);
 	}
 
 	.panel-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--continuum-space-sm) var(--continuum-space-md);
-		background: var(--continuum-bg-tertiary);
-		border-bottom: 1px solid var(--continuum-border);
+		padding: var(--continuum-space-sm, 8px) var(--continuum-space-md, 16px);
+		background: var(--continuum-bg-tertiary, #12121f);
+		border-bottom: 1px solid var(--continuum-border, #2d2d44);
 	}
 
 	.panel-header h3 {
 		margin: 0;
-		font-size: var(--continuum-font-size-md);
+		font-size: var(--continuum-font-size-md, 14px);
 		font-weight: 600;
-		color: var(--continuum-text-primary);
+		color: var(--continuum-text-primary, #e8e8e8);
 	}
 
 	.live-indicator {
-		font-size: var(--continuum-font-size-xs);
-		color: var(--continuum-accent-success);
+		font-size: var(--continuum-font-size-xs, 11px);
+		color: var(--continuum-accent-success, #3fb950);
 		animation: pulse 2s infinite;
+	}
+
+	.live-indicator::before {
+		content: '\u25cf ';
 	}
 
 	@keyframes pulse {
@@ -76,51 +84,51 @@
 	.metrics-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
-		gap: var(--continuum-space-md);
-		padding: var(--continuum-space-md);
+		gap: var(--continuum-space-md, 16px);
+		padding: var(--continuum-space-md, 16px);
 	}
 
 	.metric-card {
-		padding: var(--continuum-space-md);
-		background: var(--continuum-bg-tertiary);
-		border-radius: var(--continuum-radius-sm);
+		padding: var(--continuum-space-md, 16px);
+		background: var(--continuum-bg-tertiary, #12121f);
+		border-radius: var(--continuum-radius-sm, 4px);
 		text-align: center;
 	}
 
 	.metric-value {
 		font-size: 28px;
 		font-weight: 700;
-		color: var(--continuum-text-primary);
+		color: var(--continuum-text-primary, #e8e8e8);
 	}
 
 	.metric-card[data-status="warning"] .metric-value {
-		color: var(--continuum-accent-warning);
+		color: var(--continuum-accent-warning, #d29922);
 	}
 
 	.metric-card[data-status="danger"] .metric-value {
-		color: var(--continuum-accent-danger);
+		color: var(--continuum-accent-danger, #f85149);
 	}
 
 	.metric-label {
-		font-size: var(--continuum-font-size-sm);
-		color: var(--continuum-text-secondary);
-		margin-top: var(--continuum-space-xs);
+		font-size: var(--continuum-font-size-sm, 12px);
+		color: var(--continuum-text-secondary, #a0a0a0);
+		margin-top: var(--continuum-space-xs, 4px);
 	}
 
 	.metric-trend {
-		font-size: var(--continuum-font-size-xs);
-		margin-top: var(--continuum-space-xs);
+		font-size: var(--continuum-font-size-xs, 11px);
+		margin-top: var(--continuum-space-xs, 4px);
 	}
 
 	.metric-trend[data-status="success"] {
-		color: var(--continuum-accent-success);
+		color: var(--continuum-accent-success, #3fb950);
 	}
 
 	.metric-trend[data-status="warning"] {
-		color: var(--continuum-accent-warning);
+		color: var(--continuum-accent-warning, #d29922);
 	}
 
 	.metric-trend[data-status="danger"] {
-		color: var(--continuum-accent-danger);
+		color: var(--continuum-accent-danger, #f85149);
 	}
 </style>

@@ -105,6 +105,10 @@ class PluginUIManifest(BaseModel):
     """UI configuration for a plugin."""
 
     tag_prefix: str = Field(..., pattern="^[a-z][a-z0-9-]*$")
+    bundle: str | None = Field(
+        default=None,
+        description="Relative path to the built Web Component bundle (e.g., 'dist/plugin.js')",
+    )
 
 
 class PluginMetaManifest(BaseModel):
