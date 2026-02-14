@@ -2,12 +2,14 @@
 node_modules/
 vendor/
 venv/
+.venv/
 __pycache__/
 
 # Build outputs
 dist/
 build/
 *.egg-info/
+.svelte-kit/
 
 # IDE
 .idea/
