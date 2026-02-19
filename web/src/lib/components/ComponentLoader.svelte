@@ -125,7 +125,7 @@
 	}
 
 	.component-placeholder {
-		background: var(--continuum-bg-secondary);
+		background: var(--continuum-bg-tertiary);
 		border: 1px solid var(--continuum-border);
 		border-radius: var(--continuum-radius-md);
 		overflow: hidden;
@@ -173,7 +173,7 @@
 		justify-content: center;
 		gap: var(--continuum-space-sm);
 		padding: var(--continuum-space-lg);
-		background: var(--continuum-bg-secondary);
+		background: var(--continuum-bg-tertiary);
 		border: 1px solid var(--continuum-border);
 		border-radius: var(--continuum-radius-md);
 		color: var(--continuum-text-secondary);
@@ -196,7 +196,7 @@
 	}
 
 	.component-error {
-		background: var(--continuum-bg-secondary);
+		background: var(--continuum-bg-tertiary);
 		border: 1px solid var(--continuum-accent-danger);
 		border-radius: var(--continuum-radius-md);
 		overflow: hidden;

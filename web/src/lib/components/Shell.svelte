@@ -86,26 +86,6 @@
 	</div>
 {:else}
 	<div class="shell">
-		<!-- Header -->
-		<header class="header">
-			<div class="header-left">
-				<span class="logo">Continuum</span>
-				<span class="perspective-label">{$perspectives.find(p => p.id === $activePerspective)?.label ?? ''}</span>
-			</div>
-			<div class="header-center">
-				<button class="search-trigger" onclick={() => showCommandPalette = true}>
-					<span class="search-icon">⌘</span>
-					<span>Search or run command...</span>
-					<kbd>⌘K</kbd>
-				</button>
-			</div>
-			<div class="header-right">
-				<span class="status" class:ready={$registry?.lifecycle_state === 'ready'}>
-					{$registry?.lifecycle_state}
-				</span>
-			</div>
-		</header>
-
 		<!-- Main layout -->
 		<div class="layout">
 			<!-- Left Nav -->
@@ -114,8 +94,7 @@
 					<span class="logo-text">C</span>
 				</div>
 				<div class="nav-section">
-					<div class="nav-section-label">Views</div>
-					{#each $leftNav.filter(n => n.target?.type === 'panel') as item}
+		{#each $leftNav.filter(n => n.target?.type === 'panel') as item}
 						<NavItem
 							{item}
 							active={item.target?.panel_id === $activePerspective}
@@ -151,8 +130,16 @@
 
 		<!-- Footer -->
 		<footer class="footer">
-			<span>Plugins: {$registry?.plugins.length ?? 0}</span>
-			<span>Fingerprint: {$registry?.registry_fingerprint ?? ''}</span>
+			<div class="footer-left">
+				<span>Plugins: {$registry?.plugins.length ?? 0}</span>
+				<span>Fingerprint: {$registry?.registry_fingerprint ?? ''}</span>
+			</div>
+			<div class="footer-right">
+				<span class="system-status" class:ready={$registry?.lifecycle_state === 'ready'} class:degraded={$registry?.lifecycle_state === 'degraded'}>
+					<span class="status-dot"></span>
+					System Status
+				</span>
+			</div>
 		</footer>
 
 		<!-- Overlays -->
@@ -211,97 +198,6 @@
 		overflow: hidden;
 	}
 
-	.header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		height: var(--continuum-header-height);
-		padding: 0 var(--continuum-space-md);
-		background: var(--continuum-bg-secondary);
-		border-bottom: 1px solid var(--continuum-border);
-	}
-
-	.header-left {
-		display: flex;
-		align-items: center;
-		gap: var(--continuum-space-md);
-	}
-
-	.logo {
-		font-weight: 600;
-		font-size: var(--continuum-font-size-lg);
-	}
-
-	.perspective-label {
-		color: var(--continuum-text-secondary);
-		font-size: var(--continuum-font-size-sm);
-	}
-
-	.header-center {
-		flex: 1;
-		display: flex;
-		justify-content: center;
-	}
-
-	.search-trigger {
-		display: flex;
-		align-items: center;
-		gap: var(--continuum-space-sm);
-		padding: var(--continuum-space-xs) var(--continuum-space-md);
-		background: var(--continuum-bg-tertiary);
-		border: 1px solid var(--continuum-border);
-		border-radius: var(--continuum-radius-md);
-		color: var(--continuum-text-secondary);
-		min-width: 300px;
-	}
-
-	.search-trigger:hover {
-		border-color: var(--continuum-text-muted);
-	}
-
-	.search-trigger kbd {
-		margin-left: auto;
-		padding: 2px 6px;
-		background: var(--continuum-bg-hover);
-		border-radius: var(--continuum-radius-sm);
-		font-size: var(--continuum-font-size-xs);
-	}
-
-	.header-right {
-		display: flex;
-		align-items: center;
-	}
-
-	.status {
-		padding: 2px 8px;
-		background: var(--continuum-bg-tertiary);
-		border-radius: var(--continuum-radius-sm);
-		font-size: var(--continuum-font-size-xs);
-		text-transform: uppercase;
-	}
-
-	.status.ready {
-		background: var(--continuum-accent-success);
-		color: white;
-	}
-
-	.layout {
-		display: flex;
-		flex: 1;
-		overflow: hidden;
-	}
-
-	.left-nav {
-		width: var(--continuum-nav-width);
-		background: var(--continuum-bg-secondary);
-		border-right: 1px solid var(--continuum-border);
-		overflow-y: auto;
-		padding: var(--continuum-space-sm);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-	}
-
 	.nav-logo {
 		width: 40px;
 		height: 40px;
@@ -318,6 +214,51 @@
 		font-weight: 700;
 		font-size: var(--continuum-font-size-lg);
 	}
+
+	.system-status {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: var(--continuum-font-size-xs);
+		color: var(--continuum-text-muted);
+	}
+
+	.status-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: var(--continuum-text-muted);
+	}
+
+	.system-status.ready .status-dot {
+		background: var(--continuum-accent-success);
+	}
+
+	.system-status.degraded .status-dot {
+		background: var(--continuum-accent-warning, #f59e0b);
+	}
+
+	.layout {
+		display: flex;
+		flex: 1;
+		overflow: hidden;
+		padding: var(--continuum-space-sm);
+		gap: var(--continuum-space-sm);
+	}
+
+	.left-nav {
+		width: var(--continuum-nav-width);
+		background: var(--continuum-bg-secondary);
+		border: 1px solid var(--continuum-border);
+		border-radius: var(--continuum-radius-lg);
+		overflow-x: hidden;
+		overflow-y: auto;
+		padding: var(--continuum-space-sm);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
 
 	.nav-section {
 		display: flex;
@@ -342,15 +283,13 @@
 	.main {
 		flex: 1;
 		overflow-y: auto;
-		padding: var(--continuum-space-md);
+		padding: 0 var(--continuum-space-sm) var(--continuum-space-sm);
 	}
 
 	.right-rail {
 		width: var(--continuum-rail-width);
-		background: var(--continuum-bg-secondary);
-		border-left: 1px solid var(--continuum-border);
 		overflow-y: auto;
-		padding: var(--continuum-space-md);
+		padding: 0 var(--continuum-space-sm) var(--continuum-space-sm);
 	}
 
 	.footer {
@@ -363,5 +302,16 @@
 		border-top: 1px solid var(--continuum-border);
 		font-size: var(--continuum-font-size-xs);
 		color: var(--continuum-text-muted);
+	}
+
+	.footer-left {
+		display: flex;
+		align-items: center;
+		gap: var(--continuum-space-md);
+	}
+
+	.footer-right {
+		display: flex;
+		align-items: center;
 	}
 </style>

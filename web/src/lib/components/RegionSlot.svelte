@@ -48,7 +48,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: var(--continuum-space-xl);
-		background: var(--continuum-bg-secondary);
+		background: var(--continuum-bg-tertiary);
 		border: 1px dashed var(--continuum-border);
 		border-radius: var(--continuum-radius-md);
 	}
