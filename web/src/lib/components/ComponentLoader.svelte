@@ -15,12 +15,12 @@
 	let { contribution }: Props = $props();
 
 	// Reactive bundle state
-	let state = $state<LoadState>('pending');
-	let error = $state<string | undefined>(undefined);
+	let loadState: LoadState = $state('pending');
+	let loadError: string | undefined = $state(undefined);
 	let elementReady = $state(false);
 
 	// Track the current bundle URL to detect changes
-	let currentBundleUrl = $state<string | null>(null);
+	let currentBundleUrl: string | null = $state(null);
 
 	// Load bundle when contribution changes
 	$effect(() => {
@@ -31,8 +31,8 @@
 		if (bundleUrl !== currentBundleUrl) {
 			currentBundleUrl = bundleUrl ?? null;
 			elementReady = false;
-			state = 'pending';
-			error = undefined;
+			loadState = 'pending';
+			loadError = undefined;
 		}
 
 		if (!bundleUrl || !component) {
@@ -44,10 +44,10 @@
 		const errorStore = bundleError(bundleUrl);
 
 		const unsubState = stateStore.subscribe((s) => {
-			state = s;
+			loadState = s;
 		});
 		const unsubError = errorStore.subscribe((e) => {
-			error = e;
+			loadError = e;
 		});
 
 		// Start loading the bundle
@@ -63,7 +63,7 @@
 
 	// Wait for custom element to be defined once bundle is ready
 	$effect(() => {
-		if (state !== 'ready' || !contribution.component) {
+		if (loadState !== 'ready' || !contribution.component) {
 			return;
 		}
 
@@ -72,7 +72,7 @@
 				elementReady = true;
 			})
 			.catch((err) => {
-				error = err.message;
+				loadError = err.message;
 			});
 	});
 </script>
@@ -89,12 +89,12 @@
 			<p class="hint">Plugin does not have a UI bundle defined</p>
 		</div>
 	</div>
-{:else if state === 'loading'}
+{:else if loadState === 'loading'}
 	<div class="component-loading">
 		<div class="loading-spinner"></div>
 		<span>Loading {contribution.component}...</span>
 	</div>
-{:else if state === 'failed'}
+{:else if loadState === 'failed'}
 	<div class="component-error">
 		<div class="error-header">Failed to load plugin component</div>
 		<dl class="error-details">
@@ -105,7 +105,7 @@
 			<dt>Bundle</dt>
 			<dd><code>{contribution.bundle_url}</code></dd>
 			<dt>Error</dt>
-			<dd class="error-message">{error}</dd>
+			<dd class="error-message">{loadError}</dd>
 		</dl>
 	</div>
 {:else if elementReady && contribution.component}

@@ -21,6 +21,7 @@
 	import Drawer from './Drawer.svelte';
 
 	let showCommandPalette = false;
+	let showDecorators = false;
 	let activeDrawer: Contribution | null = null;
 
 	onMount(() => {
@@ -32,13 +33,26 @@
 				e.preventDefault();
 				showCommandPalette = !showCommandPalette;
 			}
+			if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+				e.preventDefault();
+				showDecorators = true;
+			}
 			if (e.key === 'Escape') {
 				showCommandPalette = false;
 				activeDrawer = null;
 			}
 		}
+		function handleKeyup(e: KeyboardEvent) {
+			if (e.key === 'd' || e.key === 'Meta' || e.key === 'Control') {
+				showDecorators = false;
+			}
+		}
 		window.addEventListener('keydown', handleKeydown);
-		return () => window.removeEventListener('keydown', handleKeydown);
+		window.addEventListener('keyup', handleKeyup);
+		return () => {
+			window.removeEventListener('keydown', handleKeydown);
+			window.removeEventListener('keyup', handleKeyup);
+		};
 	});
 
 	function handleNavAction(target: Contribution['target']) {
@@ -85,7 +99,7 @@
 		<button onclick={() => fetchRegistry()}>Retry</button>
 	</div>
 {:else}
-	<div class="shell">
+	<div class="shell" class:decorators={showDecorators}>
 		<!-- Main layout -->
 		<div class="layout">
 			<!-- Left Nav -->
@@ -313,5 +327,48 @@
 	.footer-right {
 		display: flex;
 		align-items: center;
+	}
+
+	/* Design decorators (Cmd+D) */
+	.shell.decorators .left-nav,
+	.shell.decorators .main,
+	.shell.decorators .right-rail,
+	.shell.decorators .footer {
+		position: relative;
+		outline: 1px solid var(--continuum-accent-primary);
+		outline-offset: -1px;
+	}
+
+	.shell.decorators .left-nav::after,
+	.shell.decorators .main::after,
+	.shell.decorators .right-rail::after,
+	.shell.decorators .footer::after {
+		position: absolute;
+		top: 4px;
+		left: 4px;
+		padding: 2px 6px;
+		background: var(--continuum-accent-primary);
+		color: white;
+		font-size: 10px;
+		font-family: var(--continuum-font-mono);
+		border-radius: var(--continuum-radius-sm);
+		z-index: 1000;
+		pointer-events: none;
+		opacity: 0.9;
+	}
+
+	.shell.decorators .left-nav::after { content: 'ui.slot.left_nav'; }
+	.shell.decorators .main::after { content: 'ui.slot.main'; }
+	.shell.decorators .right-rail::after { content: 'ui.slot.right_rail'; }
+	.shell.decorators .footer::after { content: 'ui.slot.footer'; }
+
+	.shell.decorators :global([data-slot]) {
+		position: relative;
+	}
+
+	.shell.decorators :global([data-slot] > *) {
+		outline: 1px dashed var(--continuum-accent-warning, #f59e0b);
+		outline-offset: -1px;
+		position: relative;
 	}
 </style>

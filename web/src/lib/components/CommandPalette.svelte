@@ -180,9 +180,11 @@
 		onCancel={handleCancelConfirm}
 	/>
 {:else}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div class="overlay" onclick={onClose} role="presentation">
-		<div class="palette" onclick={(e) => e.stopPropagation()} role="dialog">
+		<div class="palette" onclick={(e) => e.stopPropagation()} role="dialog" tabindex="-1">
 			<div class="search-container">
+				<!-- svelte-ignore a11y_autofocus -->
 				<input
 					type="text"
 					placeholder="Type a command..."
@@ -328,7 +330,7 @@
 		cursor: pointer;
 	}
 
-	.command-item:hover, .command-item.selected {
+	.command-item:hover, .command-row.selected .command-item {
 		background: var(--continuum-bg-hover);
 	}
 
@@ -401,11 +403,11 @@
 		color: white;
 	}
 
-	.command-item.danger {
+	.command-row.danger .command-item {
 		border-left: 2px solid var(--continuum-accent-danger);
 	}
 
-	.command-item.confirm {
+	.command-row.confirm .command-item {
 		border-left: 2px solid var(--continuum-accent-warning);
 	}
 

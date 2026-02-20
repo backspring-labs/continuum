@@ -35,13 +35,14 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="drawer-overlay" role="button" tabindex="-1" onclick={handleOverlayClick} onkeydown={(e) => e.key === 'Enter' && handleOverlayClick()}>
-	<aside
+	<div
 		class="drawer"
 		style="width: {width}"
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.stopPropagation()}
 		role="dialog"
 		aria-modal="true"
+		tabindex="-1"
 	>
 		<header class="drawer-header">
 			<h2>{contribution.title ?? contribution.id}</h2>
@@ -50,7 +51,7 @@
 		<div class="drawer-content">
 			<ComponentLoader {contribution} />
 		</div>
-	</aside>
+	</div>
 </div>
 
 <style>
