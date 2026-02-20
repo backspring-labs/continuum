@@ -6,10 +6,10 @@ export default defineConfig({
 	server: {
 		port: 5173,
 		proxy: {
-			'/api': 'http://localhost:4040',
-			'/health': 'http://localhost:4040',
-			'/diagnostics': 'http://localhost:4040',
-			'/plugins': 'http://localhost:4040'
+			'/api': 'http://localhost:4041',
+			'/health': 'http://localhost:4041',
+			'/diagnostics': 'http://localhost:4041',
+			'/plugins': 'http://localhost:4041'
 		}
 	}
 });
