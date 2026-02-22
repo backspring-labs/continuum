@@ -58,24 +58,3 @@ priority = 100
 [contributions.nav.target]
 type = "panel"
 panel_id = "systems"
-
-# Action triggers
-[[contributions.nav]]
-slot = "ui.slot.left_nav"
-label = "Commands"
-icon = "terminal"
-priority = 50
-
-[contributions.nav.target]
-type = "command"
-command_id = "open_command_palette"
-
-[[contributions.nav]]
-slot = "ui.slot.left_nav"
-label = "Chat"
-icon = "message-circle"
-priority = 40
-
-[contributions.nav.target]
-type = "drawer"
-drawer_id = "agent_chat"

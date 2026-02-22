@@ -120,6 +120,27 @@
 				</div>
 				<div class="nav-spacer"></div>
 				<div class="nav-section">
+					<button
+						class="shell-action-btn"
+						onclick={() => showCommandPalette = true}
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M4 17l6-6-6-6M12 19h8"/>
+						</svg>
+						<span class="shell-action-tooltip">Commands</span>
+					</button>
+					<button
+						class="shell-action-btn"
+						onclick={() => {
+							const chat = $drawerContributions.find(d => d.id === 'agent_chat');
+							if (chat) activeDrawer = activeDrawer?.id === chat.id ? null : chat;
+						}}
+					>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+						</svg>
+						<span class="shell-action-tooltip">Chat</span>
+					</button>
 					{#each $leftNav.filter(n => n.target?.type !== 'panel') as item}
 						<NavItem
 							{item}
@@ -188,7 +209,12 @@
 				message="Are you sure you want to log out?"
 				dangerLevel="confirm"
 				confirmLabel="Log Out"
-				onConfirm={() => showLogoutDialog = false}
+				onConfirm={() => {
+					if (window.continuum?.onLogout) {
+						window.continuum.onLogout();
+					}
+					showLogoutDialog = false;
+				}}
 				onCancel={() => showLogoutDialog = false}
 			/>
 		{/if}
@@ -302,19 +328,12 @@
 		gap: var(--continuum-space-xs);
 	}
 
-	.nav-section-label {
-		font-size: 9px;
-		color: var(--continuum-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 1px;
-		margin-bottom: var(--continuum-space-xs);
-	}
-
 	.nav-spacer {
 		flex: 1;
 		min-height: var(--continuum-space-lg);
 	}
 
+	.shell-action-btn,
 	.logout-btn {
 		width: 44px;
 		height: 44px;
@@ -328,19 +347,25 @@
 		background: transparent;
 		border: none;
 		position: relative;
+	}
+
+	.logout-btn {
 		margin-top: var(--continuum-space-sm);
 	}
 
+	.shell-action-btn:hover,
 	.logout-btn:hover {
 		background: var(--continuum-bg-hover);
 		color: var(--continuum-text-primary);
 	}
 
+	.shell-action-btn svg,
 	.logout-btn svg {
 		width: 22px;
 		height: 22px;
 	}
 
+	.shell-action-tooltip,
 	.logout-tooltip {
 		position: absolute;
 		left: 100%;
@@ -360,6 +385,7 @@
 		color: var(--continuum-text-primary);
 	}
 
+	.shell-action-btn:hover .shell-action-tooltip,
 	.logout-btn:hover .logout-tooltip {
 		opacity: 1;
 	}
