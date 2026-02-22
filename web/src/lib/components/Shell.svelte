@@ -19,8 +19,10 @@
 	import NavItem from './NavItem.svelte';
 	import CommandPalette from './CommandPalette.svelte';
 	import Drawer from './Drawer.svelte';
+	import ConfirmDialog from './ConfirmDialog.svelte';
 
 	let showCommandPalette = false;
+	let showLogoutDialog = false;
 	let showDecorators = false;
 	let activeDrawer: Contribution | null = null;
 
@@ -118,7 +120,6 @@
 				</div>
 				<div class="nav-spacer"></div>
 				<div class="nav-section">
-					<div class="nav-section-label">Actions</div>
 					{#each $leftNav.filter(n => n.target?.type !== 'panel') as item}
 						<NavItem
 							{item}
@@ -127,6 +128,15 @@
 						/>
 					{/each}
 				</div>
+				<button
+					class="logout-btn"
+					onclick={() => showLogoutDialog = true}
+				>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+					</svg>
+					<span class="logout-tooltip">Log Out</span>
+				</button>
 			</nav>
 
 			<!-- Main content -->
@@ -169,6 +179,17 @@
 			<Drawer
 				contribution={activeDrawer}
 				onClose={() => activeDrawer = null}
+			/>
+		{/if}
+
+		{#if showLogoutDialog}
+			<ConfirmDialog
+				title="Log Out"
+				message="Are you sure you want to log out?"
+				dangerLevel="confirm"
+				confirmLabel="Log Out"
+				onConfirm={() => showLogoutDialog = false}
+				onCancel={() => showLogoutDialog = false}
 			/>
 		{/if}
 	</div>
@@ -292,6 +313,55 @@
 	.nav-spacer {
 		flex: 1;
 		min-height: var(--continuum-space-lg);
+	}
+
+	.logout-btn {
+		width: 44px;
+		height: 44px;
+		border-radius: var(--continuum-radius-md);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.15s;
+		color: var(--continuum-text-secondary);
+		background: transparent;
+		border: none;
+		position: relative;
+		margin-top: var(--continuum-space-sm);
+	}
+
+	.logout-btn:hover {
+		background: var(--continuum-bg-hover);
+		color: var(--continuum-text-primary);
+	}
+
+	.logout-btn svg {
+		width: 22px;
+		height: 22px;
+	}
+
+	.logout-tooltip {
+		position: absolute;
+		left: 100%;
+		top: 50%;
+		transform: translateY(-50%);
+		background: var(--continuum-bg-tertiary);
+		border: 1px solid var(--continuum-border);
+		padding: 6px 10px;
+		border-radius: var(--continuum-radius-sm);
+		font-size: 12px;
+		white-space: nowrap;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.15s;
+		margin-left: 8px;
+		z-index: 100;
+		color: var(--continuum-text-primary);
+	}
+
+	.logout-btn:hover .logout-tooltip {
+		opacity: 1;
 	}
 
 	.main {
