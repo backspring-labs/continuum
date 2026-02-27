@@ -1,7 +1,7 @@
 # Plan: Theme System (Core Seam + Theme Selector Plugin)
 
 **Date:** 2026-02-27
-**Status:** Draft (v2.0)
+**Status:** Draft (v2.1)
 **Reference:** `CONTINUUM_V1_ARCH_SPEC.md`, `002-dynamic-plugin-ui-loading.md`
 
 ---
@@ -42,40 +42,65 @@ This follows Continuum's existing pattern: the host defines the seam (like persp
 │  2. Theme registry (collect themes from plugins, serve via API) │
 │  3. Theme engine (shell-side: apply tokens, persist, restore)   │
 │  4. FOUC prevention (inline script in app.html)                 │
-│  5. Default dark theme (existing app.css, always the fallback)  │
-│  6. prefers-color-scheme detection (set initial light/dark)     │
+│  5. Built-in themes (Default Dark, Light, High Contrast)        │
+│  6. Shell theme selector (compact control in footer bar)        │
+│  7. prefers-color-scheme detection (set initial light/dark)     │
 │                                                                 │
 ├─────────────────────────────────────────────────────────────────┤
 │                    THEME SELECTOR PLUGIN                        │
 │                                                                 │
-│  1. Theme pack (5 themes: midnight, light, nord, solarized,    │
-│     high-contrast) — contributed via [[contributions.theme]]    │
-│  2. Theme selector drawer UI (visual picker with swatches)      │
+│  1. Additional themes (midnight, nord, solarized-dark) —        │
+│     contributed via [[contributions.theme]]                     │
+│  2. Enhanced theme selector drawer (visual picker with swatches │
+│     preview cards, category grouping)                           │
 │  3. Nav item ("Appearance" button to open drawer)               │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### Built-in vs Plugin-Contributed Themes
+
+The core ships three built-in themes so that theming works immediately after `git clone` + `continuum dev`, with no plugins required:
+
+| Theme | Source | Why Built-in |
+|-------|--------|--------------|
+| **Default Dark** | `app.css` `:root` tokens | The baseline — always present, fallback when theme is removed |
+| **Light** | Built-in theme definition | Required for `prefers-color-scheme` support — the core needs a light theme to switch to when OS is in light mode |
+| **High Contrast** | Built-in theme definition | Accessibility is a core platform concern, not an optional plugin feature |
+
+The plugin adds "flavor" themes (Midnight Blue, Nord, Solarized Dark) that are nice-to-have but not essential for core functionality. These are purely aesthetic options that belong in a plugin.
+
+Built-in themes are defined in the backend (always present in the registry response, regardless of installed plugins) and are **not** `[[contributions.theme]]` entries — they're hard-coded in the registry builder as always-available themes. Plugin-contributed themes merge alongside them.
 
 ### How Theming Works (End-to-End)
 
 ```
                      Boot Sequence
                      ═════════════
-  1. Server discovers plugins, collects [[contributions.theme]]
-  2. /api/registry response includes new "themes" array
+  1. Server builds registry: built-in themes + plugin [[contributions.theme]]
+  2. /api/registry response includes "themes" array (built-in + contributed)
   3. Shell loads, inline <script> reads localStorage('continuum-theme')
   4. If saved theme ID found → sets data-theme attribute immediately (FOUC prevention)
-  5. Shell fetches /api/registry → receives theme definitions with full token maps
-  6. Theme engine applies matching theme's tokens via <style> injection
-  7. Dashboard renders fully themed — no flash
+  5. If no saved theme → check prefers-color-scheme, auto-select light if OS prefers light
+  6. Shell fetches /api/registry → receives theme definitions with full token maps
+  7. Theme engine applies matching theme's tokens via <style> injection
+  8. Dashboard renders fully themed — no flash
+  9. Footer shows compact theme selector with all available themes
 
-                     Theme Switch
-                     ════════════
-  1. User opens Appearance drawer → sees theme cards from registry
-  2. Clicks a theme → shell theme engine applies it instantly
-  3. Engine sets data-theme attr + injects <style> with token overrides
+                     Theme Switch (Shell Selector)
+                     ═════════════════════════════
+  1. User clicks theme selector in footer bar
+  2. Cycles or picks from dropdown of available themes
+  3. Shell theme engine applies instantly (data-theme + <style> injection)
   4. Persists theme ID to localStorage
-  5. Next page load → step 3-4 of boot sequence restores it
+  5. Next page load → step 3-5 of boot sequence restores it
+
+                     Theme Switch (Plugin Drawer)
+                     ════════════════════════════
+  1. User opens Appearance drawer → sees theme cards with swatches
+  2. Clicks a theme card → plugin dispatches continuum:theme-apply event
+  3. Shell listens, delegates to theme engine → applies instantly
+  4. Same persistence behavior as shell selector
 ```
 
 ### Token Flow
@@ -191,13 +216,91 @@ preview_colors = ["#0b1628", "#111d35", "#58a6ff", "#e6edf3", "#3fb950"]
 **Design decision — why split manifest and Python registration:**
 Theme token maps contain 20+ key-value pairs. Encoding them in TOML is verbose and error-prone. The manifest declares theme *metadata* (id, name, category, preview colors for the selector UI). The Python `register()` function provides the full token map. This mirrors how commands work: manifest declares metadata, Python provides the handler.
 
-### 1C. Registry Resolution for Themes
+### 1C. Built-in Theme Definitions
+
+**File:** `src/continuum/domain/themes.py` (NEW)
+
+The core ships with three built-in themes defined as static data. These are always available regardless of installed plugins:
+
+```python
+"""
+Built-in theme definitions.
+
+These themes ship with the core framework and are always available.
+Plugins can contribute additional themes via [[contributions.theme]].
+"""
+
+BUILTIN_THEMES: list[dict] = [
+    {
+        "id": "light",
+        "name": "Light",
+        "description": "Clean light theme with white backgrounds",
+        "category": "light",
+        "builtin": True,
+        "preview_colors": ["#ffffff", "#f6f8fa", "#0969da", "#1f2328", "#1a7f37"],
+        "tokens": {
+            "--continuum-bg-primary": "#ffffff",
+            "--continuum-bg-secondary": "#f6f8fa",
+            "--continuum-bg-tertiary": "#eaeef2",
+            "--continuum-bg-hover": "#d0d7de",
+            "--continuum-bg-active": "#0969da1a",
+            "--continuum-border": "#d0d7de",
+            "--continuum-border-muted": "#eaeef2",
+            "--continuum-text-primary": "#1f2328",
+            "--continuum-text-secondary": "#656d76",
+            "--continuum-text-muted": "#8b949e",
+            "--continuum-text-link": "#0969da",
+            "--continuum-accent-primary": "#0969da",
+            "--continuum-accent-success": "#1a7f37",
+            "--continuum-accent-warning": "#9a6700",
+            "--continuum-accent-danger": "#d1242f",
+            "--continuum-shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.08)",
+            "--continuum-shadow-md": "0 4px 12px rgba(0, 0, 0, 0.1)",
+            "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.12)",
+        },
+    },
+    {
+        "id": "high-contrast",
+        "name": "High Contrast",
+        "description": "Maximum contrast for accessibility",
+        "category": "dark",
+        "builtin": True,
+        "preview_colors": ["#000000", "#0a0a0a", "#409eff", "#ffffff", "#34d058"],
+        "tokens": {
+            "--continuum-bg-primary": "#000000",
+            "--continuum-bg-secondary": "#0a0a0a",
+            "--continuum-bg-tertiary": "#1a1a1a",
+            "--continuum-bg-hover": "#2a2a2a",
+            "--continuum-bg-active": "#409eff33",
+            "--continuum-border": "#505050",
+            "--continuum-border-muted": "#333333",
+            "--continuum-text-primary": "#ffffff",
+            "--continuum-text-secondary": "#f0f0f0",
+            "--continuum-text-muted": "#b0b0b0",
+            "--continuum-text-link": "#409eff",
+            "--continuum-accent-primary": "#409eff",
+            "--continuum-accent-success": "#34d058",
+            "--continuum-accent-warning": "#ffdf5d",
+            "--continuum-accent-danger": "#ff4444",
+            "--continuum-shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.5)",
+            "--continuum-shadow-md": "0 4px 12px rgba(0, 0, 0, 0.6)",
+            "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.7)",
+        },
+    },
+]
+```
+
+**Note:** "Default Dark" is NOT in this list — it's the existing `app.css` `:root` tokens. It's always implicitly available as the "no theme selected" state. The shell selector includes it as the first option labeled "Default Dark" that calls `applyTheme(null)`.
+
+### 1D. Registry Resolution for Themes
 
 **File:** `src/continuum/app/registry.py`
 
-Update `build_registry()` to collect theme contributions into a separate list (themes don't go into slots — they're a distinct contribution category, like commands):
+Update `build_registry()` to collect theme contributions into a separate list (themes don't go into slots — they're a distinct contribution category, like commands). Built-in themes are prepended before plugin-contributed themes:
 
 ```python
+from continuum.domain.themes import BUILTIN_THEMES
+
 def build_registry(contributions: list[dict[str, Any]]) -> ResolvedRegistry:
     # ... existing logic ...
 
@@ -215,11 +318,14 @@ def build_registry(contributions: list[dict[str, Any]]) -> ResolvedRegistry:
 
     # ... existing slot processing ...
 
-    # Process themes — sort by priority (higher = listed first), then discovery_index
-    registry.themes = _sort_contributions(themes)
+    # Process themes: built-in themes first, then plugin-contributed (sorted by priority)
+    plugin_themes = _sort_contributions(themes)
+    registry.themes = list(BUILTIN_THEMES) + plugin_themes
 
     # ... rest of existing logic ...
 ```
+
+Built-in themes always appear first in the list (before plugin themes). If a plugin contributes a theme with the same ID as a built-in (e.g., `id = "light"`), the plugin version overrides the built-in — allowing plugins to customize the core themes. Duplicate detection compares by ID.
 
 **File:** `src/continuum/app/registry.py` — Update `ResolvedRegistry`:
 
@@ -235,7 +341,7 @@ class ResolvedRegistry:
     report: RegistryBuildReport = field(default_factory=RegistryBuildReport)
 ```
 
-### 1D. API Response: Themes in Registry
+### 1E. API Response: Themes in Registry
 
 **File:** `src/continuum/app/runtime.py`
 
@@ -282,7 +388,7 @@ async def registry(request: Request) -> RegistryResponse:
     )
 ```
 
-### 1E. Shell Theme Engine
+### 1F. Shell Theme Engine
 
 **File:** `web/src/lib/services/themeEngine.ts` (NEW)
 
@@ -364,7 +470,7 @@ export function restoreTheme(themes: ThemeDefinition[]): void {
 }
 ```
 
-### 1F. Shell Integration (Registry Store + Shell.svelte)
+### 1G. Shell Integration (Registry Store + Shell.svelte)
 
 **File:** `web/src/lib/stores/registry.ts`
 
@@ -420,7 +526,60 @@ onMount(() => {
 
 This is a small addition to Shell.svelte — the shell invokes the theme engine after registry data arrives and listens for theme-apply events. No theme UI, no picker, no drawer — that's all plugin territory.
 
-### 1G. FOUC Prevention
+### 1H. Shell Theme Selector (Footer Control)
+
+**File:** `web/src/lib/components/ThemeSelector.svelte` (NEW)
+
+A compact theme selector built into the shell's footer bar. This is the core's built-in UI for switching themes — it works with zero plugins installed.
+
+**Design:** A small clickable control in the footer (next to "System Status") that shows the current theme name and opens a dropdown with all available themes:
+
+```
+┌─ Footer ─────────────────────────────────────────────────────────────┐
+│ Plugins: 3  Fingerprint: a1b2c3d4    Theme: Default Dark ▾  ● Ready │
+│                                       ┌───────────────────┐         │
+│                                       │ ● Default Dark  ✓ │         │
+│                                       │ ○ Light           │         │
+│                                       │ ● High Contrast   │         │
+│                                       │ ─────────────────-│         │
+│                                       │ ● Midnight Blue   │  ← from│
+│                                       │ ● Nord            │  plugin │
+│                                       │ ● Solarized Dark  │         │
+│                                       └───────────────────┘         │
+└──────────────────────────────────────────────────────────────────────┘
+  ● = dark category   ○ = light category   ✓ = active
+```
+
+**Behavior:**
+- Always visible in footer (the footer is a core shell region, always rendered)
+- Shows current theme name ("Default Dark" when no theme applied)
+- Click opens a dropdown listing all themes from the registry (built-in + plugin-contributed)
+- Built-in themes listed first, then a separator, then plugin-contributed themes (if any)
+- Small dot indicates dark/light category
+- Checkmark on active theme
+- Click a theme → applies instantly via `applyTheme()`
+- Click "Default Dark" → calls `applyTheme(null)` to revert
+- Dropdown closes on selection or click-outside
+
+**Why the footer?** The footer bar (`Shell.svelte:177-188`) already shows system metadata (plugin count, fingerprint, status). A theme selector is the same kind of operator utility — small, always accessible, not a primary workflow action. It doesn't warrant a nav slot or a dedicated panel.
+
+**Integration in Shell.svelte:**
+
+```svelte
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-left">
+    <span>Plugins: {$registry?.plugins.length ?? 0}</span>
+    <span>Fingerprint: {$registry?.registry_fingerprint ?? ''}</span>
+  </div>
+  <div class="footer-right">
+    <ThemeSelector themes={$themes} />   <!-- NEW -->
+    <span class="system-status" ...>...</span>
+  </div>
+</footer>
+```
+
+### 1I. FOUC Prevention
 
 **File:** `web/src/app.html`
 
@@ -481,27 +640,22 @@ plugins/
 id = "continuum.theme_selector"
 name = "Theme Selector"
 version = "1.0.0"
-description = "Visual theme selector with built-in theme pack"
+description = "Additional themes and enhanced theme picker for Continuum"
 required = false
 
 [plugin.ui]
 tag_prefix = "continuum-theme-selector"
 bundle = "plugin.js"
 
-# Theme definitions (metadata only — tokens in __init__.py)
+# Additional theme definitions (metadata only — tokens in __init__.py)
+# Note: Light and High Contrast are built into the core.
+# This plugin adds "flavor" themes.
 [[contributions.theme]]
 id = "midnight"
 name = "Midnight Blue"
 description = "Deep navy with electric blue accents"
 category = "dark"
 preview_colors = ["#0b1628", "#111d35", "#58a6ff", "#e6edf3", "#3fb950"]
-
-[[contributions.theme]]
-id = "light"
-name = "Light"
-description = "Clean light theme with white backgrounds"
-category = "light"
-preview_colors = ["#ffffff", "#f6f8fa", "#0969da", "#1f2328", "#1a7f37"]
 
 [[contributions.theme]]
 id = "nord"
@@ -517,21 +671,14 @@ description = "Ethan Schoonover's precision color scheme"
 category = "dark"
 preview_colors = ["#002b36", "#073642", "#268bd2", "#839496", "#b58900"]
 
-[[contributions.theme]]
-id = "high-contrast"
-name = "High Contrast"
-description = "Maximum contrast for accessibility"
-category = "dark"
-preview_colors = ["#000000", "#0a0a0a", "#409eff", "#ffffff", "#34d058"]
-
-# Drawer contribution: the theme picker panel
+# Drawer contribution: enhanced theme picker with swatch previews
 [[contributions.drawer]]
 id = "theme_selector"
 component = "continuum-theme-selector-picker"
 title = "Appearance"
 width = "360px"
 
-# Nav contribution: button to open theme selector drawer
+# Nav contribution: button to open enhanced theme picker drawer
 [[contributions.nav]]
 slot = "ui.slot.left_nav"
 label = "Appearance"
@@ -545,15 +692,18 @@ drawer_id = "theme_selector"
 
 ### Python Entrypoint (`__init__.py`)
 
-The Python side registers theme contributions with full token maps. Each theme definition is a dict with the complete set of `--continuum-*` overrides:
+The Python side registers theme contributions with full token maps. This plugin provides three "flavor" themes (Light and High Contrast are built into the core):
 
 ```python
 """
 Continuum Theme Selector Plugin.
 
-Provides a theme pack (5 themes) and a visual theme picker drawer.
+Provides additional themes and an enhanced visual theme picker drawer.
 Theme metadata is declared in plugin.toml; full token maps are
 registered here because TOML is not ideal for 20+ key-value token maps.
+
+Note: Light and High Contrast themes are built into the core framework.
+This plugin adds flavor themes: Midnight Blue, Nord, Solarized Dark.
 """
 
 MIDNIGHT_TOKENS = {
@@ -575,27 +725,6 @@ MIDNIGHT_TOKENS = {
     "--continuum-shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.4)",
     "--continuum-shadow-md": "0 4px 12px rgba(0, 0, 0, 0.5)",
     "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.6)",
-}
-
-LIGHT_TOKENS = {
-    "--continuum-bg-primary": "#ffffff",
-    "--continuum-bg-secondary": "#f6f8fa",
-    "--continuum-bg-tertiary": "#eaeef2",
-    "--continuum-bg-hover": "#d0d7de",
-    "--continuum-bg-active": "#0969da1a",
-    "--continuum-border": "#d0d7de",
-    "--continuum-border-muted": "#eaeef2",
-    "--continuum-text-primary": "#1f2328",
-    "--continuum-text-secondary": "#656d76",
-    "--continuum-text-muted": "#8b949e",
-    "--continuum-text-link": "#0969da",
-    "--continuum-accent-primary": "#0969da",
-    "--continuum-accent-success": "#1a7f37",
-    "--continuum-accent-warning": "#9a6700",
-    "--continuum-accent-danger": "#d1242f",
-    "--continuum-shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.08)",
-    "--continuum-shadow-md": "0 4px 12px rgba(0, 0, 0, 0.1)",
-    "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.12)",
 }
 
 NORD_TOKENS = {
@@ -640,33 +769,10 @@ SOLARIZED_DARK_TOKENS = {
     "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.5)",
 }
 
-HIGH_CONTRAST_TOKENS = {
-    "--continuum-bg-primary": "#000000",
-    "--continuum-bg-secondary": "#0a0a0a",
-    "--continuum-bg-tertiary": "#1a1a1a",
-    "--continuum-bg-hover": "#2a2a2a",
-    "--continuum-bg-active": "#409eff33",
-    "--continuum-border": "#505050",
-    "--continuum-border-muted": "#333333",
-    "--continuum-text-primary": "#ffffff",
-    "--continuum-text-secondary": "#f0f0f0",
-    "--continuum-text-muted": "#b0b0b0",
-    "--continuum-text-link": "#409eff",
-    "--continuum-accent-primary": "#409eff",
-    "--continuum-accent-success": "#34d058",
-    "--continuum-accent-warning": "#ffdf5d",
-    "--continuum-accent-danger": "#ff4444",
-    "--continuum-shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.5)",
-    "--continuum-shadow-md": "0 4px 12px rgba(0, 0, 0, 0.6)",
-    "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.7)",
-}
-
 THEMES = {
     "midnight": MIDNIGHT_TOKENS,
-    "light": LIGHT_TOKENS,
     "nord": NORD_TOKENS,
     "solarized-dark": SOLARIZED_DARK_TOKENS,
-    "high-contrast": HIGH_CONTRAST_TOKENS,
 }
 
 
@@ -679,7 +785,7 @@ def register(ctx):
             "tokens": tokens,
         })
 
-    # Drawer: theme picker UI
+    # Drawer: enhanced theme picker with swatch previews
     ctx.register_contribution("drawer", {
         "id": "theme_selector",
         "component": "continuum-theme-selector-picker",
@@ -687,7 +793,7 @@ def register(ctx):
         "width": "360px",
     })
 
-    # Nav: button to open theme selector
+    # Nav: button to open enhanced theme picker
     ctx.register_contribution("nav", {
         "slot": "ui.slot.left_nav",
         "label": "Appearance",
@@ -699,30 +805,38 @@ def register(ctx):
 
 ### Theme Selector UI (`ThemeSelector.svelte`)
 
-The drawer component reads themes from the registry (via the API or passed as props) and communicates with the shell's theme engine via custom events:
+The drawer provides a richer theme selection experience than the shell's built-in footer selector. It shows all themes (built-in + plugin-contributed) as visual cards with color swatch previews:
 
 ```
 ┌─ Appearance ────────────────────────┐
 │                                      │
 │  Choose a theme for your dashboard   │
 │                                      │
+│  Built-in                            │
 │  ┌──────────┐  ┌──────────┐         │
-│  │ ████████ │  │ ████████ │         │
-│  │ Default  │  │ Midnight │         │
-│  │ Dark   ✓ │  │ Blue     │         │
+│  │ ████████ │  │ ░░░░░░░░ │         │
+│  │ Default  │  │ Light    │         │
+│  │ Dark   ✓ │  │          │         │
 │  └──────────┘  └──────────┘         │
 │                                      │
-│  ┌──────────┐  ┌──────────┐         │
-│  │ ░░░░░░░░ │  │ ████████ │         │
-│  │ Light    │  │ Nord     │         │
-│  │          │  │          │         │
-│  └──────────┘  └──────────┘         │
+│  ┌──────────┐                        │
+│  │ ████████ │                        │
+│  │ High     │                        │
+│  │ Contrast │                        │
+│  └──────────┘                        │
 │                                      │
+│  Theme Pack                          │
 │  ┌──────────┐  ┌──────────┐         │
 │  │ ████████ │  │ ████████ │         │
-│  │ Solarized│  │ High     │         │
-│  │ Dark     │  │ Contrast │         │
+│  │ Midnight │  │ Nord     │         │
+│  │ Blue     │  │          │         │
 │  └──────────┘  └──────────┘         │
+│                                      │
+│  ┌──────────┐                        │
+│  │ ████████ │                        │
+│  │ Solarized│                        │
+│  │ Dark     │                        │
+│  └──────────┘                        │
 │                                      │
 │  [Reset to Default]                  │
 │                                      │
@@ -735,7 +849,7 @@ Each theme card shows:
 - **Checkmark** on the active theme
 - Click to apply instantly
 
-**"Default Dark"** is always the first card. It's not a contributed theme — it represents the shell's built-in `:root` tokens. Clicking it dispatches `themeId: null`.
+Themes are grouped: "Built-in" (Default Dark, Light, High Contrast) and "Theme Pack" (plugin-contributed). The grouping uses the `builtin` flag on theme entries from the registry.
 
 **Plugin → Shell communication:** The plugin dispatches a `CustomEvent`:
 
@@ -748,47 +862,52 @@ this.dispatchEvent(new CustomEvent('continuum:theme-apply', {
 }));
 ```
 
-The shell listens for this event (set up in Shell.svelte per section 1F) and delegates to the theme engine. This follows the existing `continuum:*` custom event contract from the V1 arch spec.
+The shell listens for this event (set up in Shell.svelte per section 1G) and delegates to the theme engine. This follows the existing `continuum:*` custom event contract from the V1 arch spec.
 
 ---
 
-## Theme Pack (Shipped Themes)
+## All Shipped Themes
 
-### 1. Default Dark (built-in, not a contribution)
-The existing `app.css` `:root` tokens. Always available. What you get when no theme is selected or when all theme plugins are removed.
+### Built-in (Core Framework) — 3 themes
 
-### 2. Midnight Blue (`midnight`)
-- Deep navy backgrounds (`#0b1628`, `#111d35`)
-- Blue-tinted text hierarchy
-- Electric blue accents
-- Category: dark
+#### 1. Default Dark (implicit — `app.css` `:root`)
+The existing `app.css` `:root` tokens. Always available. What you get when no theme is selected or when all theme plugins are removed. Not a `ThemeContribution` — it's the baseline.
 
-### 3. Light (`light`)
+#### 2. Light (`light`)
 - White/light gray backgrounds (`#ffffff`, `#f6f8fa`)
 - Dark text (`#1f2328`, `#656d76`)
 - Blue accents (GitHub light style)
 - Lighter shadows (lower opacity)
 - Category: light
+- **Why built-in:** Required for `prefers-color-scheme: light` OS preference support
 
-### 4. Nord (`nord`)
-- Arctic, bluish-gray backgrounds from Nord palette (`#2e3440`, `#3b4252`)
-- Cool-toned text (`#eceff4`, `#d8dee9`)
-- Frost blue accents (`#88c0d0`, `#81a1c1`)
-- Category: dark
-
-### 5. Solarized Dark (`solarized-dark`)
-- Classic Solarized dark backgrounds (`#002b36`, `#073642`)
-- Solarized text hierarchy (`#839496`, `#93a1a1`)
-- Solarized accent colors (yellow `#b58900`, blue `#268bd2`)
-- Category: dark
-
-### 6. High Contrast (`high-contrast`)
+#### 3. High Contrast (`high-contrast`)
 - Pure black background (`#000000`, `#0a0a0a`)
 - Pure white text (`#ffffff`, `#f0f0f0`)
 - Bright, saturated accent colors
 - Enhanced borders (`#505050`) for visibility
 - Category: dark
-- Accessibility-focused
+- **Why built-in:** Accessibility is a core platform concern
+
+### Plugin-Contributed (Theme Selector Plugin) — 3 themes
+
+#### 4. Midnight Blue (`midnight`)
+- Deep navy backgrounds (`#0b1628`, `#111d35`)
+- Blue-tinted text hierarchy
+- Electric blue accents
+- Category: dark
+
+#### 5. Nord (`nord`)
+- Arctic, bluish-gray backgrounds from Nord palette (`#2e3440`, `#3b4252`)
+- Cool-toned text (`#eceff4`, `#d8dee9`)
+- Frost blue accents (`#88c0d0`, `#81a1c1`)
+- Category: dark
+
+#### 6. Solarized Dark (`solarized-dark`)
+- Classic Solarized dark backgrounds (`#002b36`, `#073642`)
+- Solarized text hierarchy (`#839496`, `#93a1a1`)
+- Solarized accent colors (yellow `#b58900`, blue `#268bd2`)
+- Category: dark
 
 ---
 
@@ -796,43 +915,48 @@ The existing `app.css` `:root` tokens. Always available. What you get when no th
 
 ### Phase 1: Core Theme Seam (Backend)
 
-**Goal:** Theme contributions flow through the backend pipeline.
+**Goal:** Theme contributions flow through the backend pipeline. Built-in themes are always available.
+
+**Files to create:**
+- `src/continuum/domain/themes.py` — Built-in theme definitions (Light, High Contrast)
 
 **Files to modify:**
 - `src/continuum/domain/contributions.py` — Add `ThemeContribution` dataclass
 - `src/continuum/domain/manifest.py` — Add `ThemeContributionManifest`, update `ContributionsManifest`
-- `src/continuum/app/registry.py` — Update `ResolvedRegistry` with `themes` field, update `build_registry()` to collect theme contributions
+- `src/continuum/app/registry.py` — Update `ResolvedRegistry` with `themes` field, update `build_registry()` to collect built-in + plugin theme contributions
 - `src/continuum/app/runtime.py` — Add `themes` to `RegistryState`, wire through `_resolve_registry()`, add `get_themes()` accessor
 - `src/continuum/adapters/web/api.py` — Add `themes` to `RegistryResponse`, include in registry endpoint
 
 **Verification:**
 - `pytest tests/` passes (no regressions)
-- A plugin with `[[contributions.theme]]` in its manifest and `ctx.register_contribution("theme", ...)` in `register()` is discovered and loaded
-- `GET /api/registry` response includes a `themes` array with contributed theme data
-- With no theme plugins installed, `themes` is an empty array — no errors
+- `GET /api/registry` response includes a `themes` array with 2 built-in themes (Light, High Contrast) even with zero plugins installed
+- A plugin with `[[contributions.theme]]` contributes additional themes that appear after built-ins
+- Plugin theme with same ID as built-in overrides the built-in version
 
 ### Phase 2: Core Theme Seam (Frontend)
 
-**Goal:** Shell can apply, persist, and restore themes.
+**Goal:** Shell can apply, persist, restore themes, and provides a built-in selector in the footer.
 
 **Files to create:**
 - `web/src/lib/services/themeEngine.ts` — `applyTheme()`, `getStoredThemeId()`, `restoreTheme()`
+- `web/src/lib/components/ThemeSelector.svelte` — Compact footer dropdown for theme selection
 
 **Files to modify:**
 - `web/src/lib/stores/registry.ts` — Add `themes` to `Registry` interface, add `themes` derived store, add `activeThemeId` store
-- `web/src/lib/components/Shell.svelte` — Call `restoreTheme()` after registry loads (~5 lines), add `continuum:theme-apply` event listener (~10 lines)
+- `web/src/lib/components/Shell.svelte` — Call `restoreTheme()` after registry loads (~5 lines), add `continuum:theme-apply` event listener (~10 lines), add `<ThemeSelector>` to footer
 - `web/src/app.html` — Add inline FOUC prevention script (5 lines)
 
 **Verification:**
-- Manually calling `applyTheme(theme)` in the browser console recolors the dashboard
+- Footer shows theme selector with "Default Dark", "Light", "High Contrast" (built-in themes)
+- Clicking a theme in the footer selector recolors the dashboard instantly
 - Refreshing the page restores the theme without visible flash
 - `applyTheme(null)` reverts to default dark theme
 - All existing plugin panels recolor correctly (they already use `var(--continuum-*)`)
-- With no themes in the registry, theme engine is inert — no errors, no side effects
+- This works with zero plugins installed — built-in themes are always available
 
 ### Phase 3: Theme Selector Plugin
 
-**Goal:** Full plugin with theme pack and selector UI.
+**Goal:** Plugin adds 3 flavor themes and an enhanced drawer picker.
 
 **Files to create:**
 - `plugins/continuum.theme_selector/plugin.toml`
@@ -844,8 +968,10 @@ The existing `app.css` `:root` tokens. Always available. What you get when no th
 
 **Verification:**
 - `continuum inspect` shows the plugin as loaded with theme + drawer + nav contributions
-- Opening "Appearance" drawer shows all 6 themes (default + 5 contributed)
-- Clicking a theme card applies it instantly
+- Footer selector now shows 6 themes (3 built-in + 3 plugin-contributed)
+- Opening "Appearance" drawer shows all 6 themes with visual swatch cards
+- Drawer groups themes: "Built-in" and "Theme Pack" sections
+- Clicking a theme card in the drawer applies it instantly
 - "Reset to Default" reverts to shell defaults
 - Theme persists across page refresh
 - Build: `cd plugins/continuum.theme_selector/ui && npm install && npm run build` succeeds
@@ -922,16 +1048,18 @@ This plan chose the hybrid approach over the original pure-plugin design for the
 
 - `src/continuum/domain/contributions.py` — Add `ThemeContribution` dataclass
 - `src/continuum/domain/manifest.py` — Add `ThemeContributionManifest`, update `ContributionsManifest`
-- `src/continuum/app/registry.py` — Add `themes` to `ResolvedRegistry`, update `build_registry()`
+- `src/continuum/app/registry.py` — Add `themes` to `ResolvedRegistry`, update `build_registry()` with built-in themes
 - `src/continuum/app/runtime.py` — Add `themes` to `RegistryState`, add `get_themes()`
 - `src/continuum/adapters/web/api.py` — Add `themes` to `RegistryResponse`
 - `web/src/lib/stores/registry.ts` — Add `themes` to `Registry` interface, add derived stores
-- `web/src/lib/components/Shell.svelte` — Add `restoreTheme()` call + event listener (~15 lines)
+- `web/src/lib/components/Shell.svelte` — Add `restoreTheme()` call, event listener, `<ThemeSelector>` in footer
 - `web/src/app.html` — Add inline FOUC prevention script (5 lines)
 
 ### Core Framework (Created)
 
+- `src/continuum/domain/themes.py` — Built-in theme definitions (Light, High Contrast)
 - `web/src/lib/services/themeEngine.ts` — Theme application engine
+- `web/src/lib/components/ThemeSelector.svelte` — Compact footer theme selector
 
 ### Plugin (Created)
 
@@ -962,31 +1090,39 @@ Phase 4    Testing & polish
 
 ## Verification Checklist
 
-### Core Seam
+### Core Seam (Backend)
 - [ ] `ThemeContribution` dataclass exists in domain model
 - [ ] `ThemeContributionManifest` validates in manifest schema
-- [ ] `build_registry()` collects themes into `ResolvedRegistry.themes`
-- [ ] `/api/registry` includes `themes` array in response
-- [ ] Empty `themes` array when no theme plugins installed (no errors)
+- [ ] Built-in themes defined in `src/continuum/domain/themes.py`
+- [ ] `build_registry()` collects built-in + plugin themes into `ResolvedRegistry.themes`
+- [ ] `/api/registry` includes `themes` array with 2 built-in themes (zero plugins)
+- [ ] Plugin-contributed themes appear after built-ins in the array
+- [ ] Plugin theme with same ID as built-in overrides the built-in
+- [ ] Existing tests pass with no regressions
+
+### Core Seam (Frontend)
 - [ ] Theme engine `applyTheme()` overrides all `--continuum-*` tokens
 - [ ] `applyTheme(null)` cleanly reverts to shell defaults
 - [ ] Theme persists in `localStorage` across page refreshes
 - [ ] `restoreTheme()` restores saved theme after registry loads
 - [ ] FOUC prevention script sets `data-theme` before first paint
 - [ ] Stale theme ID (plugin removed) is cleaned up on next load
+- [ ] Footer theme selector shows all available themes
+- [ ] Footer selector works with zero plugins (built-in themes only)
 - [ ] `continuum:theme-apply` custom event works from plugin → shell
-- [ ] Existing tests pass with no regressions
+- [ ] `prefers-color-scheme: light` auto-selects Light theme when no preference stored
 
 ### Plugin
 - [ ] Plugin discovered and loaded by `continuum inspect`
-- [ ] 5 themes appear in `/api/registry` themes array
+- [ ] 3 plugin themes appear in `/api/registry` alongside 2 built-ins
 - [ ] Theme selector drawer opens from "Appearance" nav item
-- [ ] All 6 themes display (default + 5 contributed) with swatches
-- [ ] Clicking a theme applies it instantly
+- [ ] Drawer shows all 6 themes (default + 2 built-in + 3 contributed) with swatches
+- [ ] Themes grouped as "Built-in" and "Theme Pack" in drawer
+- [ ] Clicking a theme card applies it instantly
 - [ ] Active theme shows checkmark indicator
 - [ ] "Reset to Default" removes theme and reverts to shell defaults
 - [ ] Plugin bundle builds with `./scripts/build-plugins.sh`
-- [ ] Removing the plugin reverts dashboard to default dark theme
+- [ ] Removing the plugin leaves 3 built-in themes still working
 
 ### Integration
 - [ ] Existing plugin panels (Signal, Systems, etc.) recolor correctly
