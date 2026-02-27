@@ -497,9 +497,6 @@ A compact theme selector built into the shell's footer bar. This is the core's b
 │                                       │ ● Default Dark  ✓ │         │
 │                                       │ ○ Light           │         │
 │                                       │ ● High Contrast   │         │
-│                                       │ ─────────────────-│         │
-│                                       │ ● Squad Ops Dark  │  ← from│
-│                                       │ ● Squad Ops HC    │  plugin │
 │                                       └───────────────────┘         │
 └──────────────────────────────────────────────────────────────────────┘
   ● = dark category   ○ = light category   ✓ = active
@@ -558,61 +555,6 @@ The existing `app.css` `:root` tokens. Always available. What you get when no th
 - Enhanced borders (`#505050`) for visibility
 - Category: dark
 - **Why built-in:** Accessibility is a core platform concern
-
----
-
-## Plugin Extensibility
-
-Continuum does **not** ship a theme plugin. Consuming apps provide their own. Here's what a consuming app's theme plugin looks like:
-
-### Example: `squadops.themes` plugin
-
-**`plugins/squadops.themes/plugin.toml`:**
-
-```toml
-[plugin]
-id = "squadops.themes"
-name = "Squad Ops Themes"
-version = "1.0.0"
-description = "Branded themes for Squad Ops dashboard"
-required = false
-
-[[contributions.theme]]
-id = "squadops-dark"
-name = "Squad Ops Dark"
-description = "Official branded dark theme"
-category = "dark"
-preview_colors = ["#1a1a2e", "#16213e", "#0f3460", "#e94560", "#533483"]
-
-[[contributions.theme]]
-id = "squadops-light"
-name = "Squad Ops Light"
-description = "Official branded light theme"
-category = "light"
-preview_colors = ["#fafafa", "#f0f0f5", "#0f3460", "#1a1a2e", "#2ecc71"]
-```
-
-**`plugins/squadops.themes/__init__.py`:**
-
-```python
-SQUADOPS_DARK_TOKENS = {
-    "--continuum-bg-primary": "#1a1a2e",
-    "--continuum-bg-secondary": "#16213e",
-    # ... full token map ...
-}
-
-SQUADOPS_LIGHT_TOKENS = {
-    "--continuum-bg-primary": "#fafafa",
-    "--continuum-bg-secondary": "#f0f0f5",
-    # ... full token map ...
-}
-
-def register(ctx):
-    ctx.register_contribution("theme", {"id": "squadops-dark", "tokens": SQUADOPS_DARK_TOKENS})
-    ctx.register_contribution("theme", {"id": "squadops-light", "tokens": SQUADOPS_LIGHT_TOKENS})
-```
-
-These themes would appear in the footer selector automatically alongside the built-in themes. If Squad Ops wants a richer picker UI, they add a `[[contributions.drawer]]` to the same plugin.
 
 ---
 
