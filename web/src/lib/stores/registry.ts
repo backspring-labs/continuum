@@ -26,6 +26,7 @@ export interface Contribution {
 	component?: string;
 	label?: string;
 	icon?: string;
+	icon_path?: string;
 	target?: NavTarget;
 	id?: string;
 	title?: string;
