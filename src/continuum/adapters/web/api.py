@@ -48,6 +48,20 @@ class DiagnosticsResponse(BaseModel):
     errors: list[str]
 
 
+class ThemeResponse(BaseModel):
+    """A theme in the registry response."""
+
+    id: str
+    name: str
+    description: str = ""
+    category: str
+    preview_colors: list[str] = Field(default_factory=list)
+    tokens: dict[str, str] = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
+    plugin_id: str = ""
+    builtin: bool = False
+
+
 class RegistryResponse(BaseModel):
     """Registry payload response."""
 
@@ -56,6 +70,7 @@ class RegistryResponse(BaseModel):
     perspectives: list[dict[str, Any]]
     regions: dict[str, list[dict[str, Any]]]
     commands: list[dict[str, Any]]
+    themes: list[ThemeResponse]
     plugins: list[dict[str, Any]]
     diagnostics: dict[str, Any]
 
@@ -129,6 +144,7 @@ async def registry(request: Request) -> RegistryResponse:
         perspectives=runtime.get_perspectives(),
         regions=regions,
         commands=runtime.get_commands(),
+        themes=runtime.get_themes(),
         plugins=runtime.get_plugin_status(),
         diagnostics={
             "conflicts": runtime.get_conflicts(),

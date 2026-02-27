@@ -1,4 +1,5 @@
 import { writable, derived, type Readable } from 'svelte/store';
+import type { ThemeDefinition } from '$lib/services/themeEngine';
 
 // Types matching the API response
 export interface Perspective {
@@ -58,6 +59,7 @@ export interface Registry {
 	perspectives: Perspective[];
 	regions: Record<string, Contribution[]>;
 	commands: Contribution[];
+	themes: ThemeDefinition[];
 	plugins: PluginStatus[];
 	diagnostics: {
 		conflicts: any[];
@@ -114,6 +116,13 @@ export const plugins: Readable<PluginStatus[]> = derived(
 	registry,
 	$registry => $registry?.plugins ?? []
 );
+
+export const themes: Readable<ThemeDefinition[]> = derived(
+	registry,
+	$registry => $registry?.themes ?? []
+);
+
+export const activeThemeId = writable<string>('default-dark');
 
 // Actions
 export async function fetchRegistry(): Promise<void> {

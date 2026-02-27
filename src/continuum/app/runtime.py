@@ -38,6 +38,7 @@ class RegistryState:
     perspectives: list[PerspectiveSpec] = field(default_factory=list)
     regions: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     commands: list[dict[str, Any]] = field(default_factory=list)
+    themes: list[dict[str, Any]] = field(default_factory=list)
     plugins: list[PluginStatus] = field(default_factory=list)
     conflicts: list[dict[str, Any]] = field(default_factory=list)
     missing_required: list[str] = field(default_factory=list)
@@ -181,6 +182,7 @@ class ContinuumRuntime:
         # Update registry state with resolved data
         self._registry.regions = self._resolved_registry.slots
         self._registry.commands = self._resolved_registry.commands
+        self._registry.themes = self._resolved_registry.themes
         self._registry.fingerprint = self._resolved_registry.fingerprint
 
         # Add conflicts and warnings from build report
@@ -276,6 +278,10 @@ class ContinuumRuntime:
     def get_commands(self) -> list[dict[str, Any]]:
         """Get registered commands."""
         return self._registry.commands
+
+    def get_themes(self) -> list[dict[str, Any]]:
+        """Get registered themes (built-in + plugin-contributed)."""
+        return self._registry.themes
 
     def get_plugin_status(self) -> list[dict[str, Any]]:
         """Get plugin status list."""

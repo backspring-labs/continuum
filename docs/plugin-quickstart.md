@@ -154,8 +154,11 @@ def register(ctx):
 
 **Notes:**
 - Themes contributed by plugins appear in the footer selector automatically alongside the built-in themes (Default Dark, Light, High Contrast)
-- Contributing a theme with the same ID as a built-in (e.g., `id = "light"`) overrides the built-in version
-- The `preview_colors` list provides 5 representative hex colors used for swatch display in the selector
+- Contributing a theme with the same ID as a built-in (e.g., `id = "light"`) overrides the built-in version. Built-in IDs are: `default-dark`, `light`, `high-contrast`. Use namespaced IDs for your themes (e.g., `myapp-dark`)
+- Themes must provide **all** required tokens (all 18 `--continuum-*` color/shadow tokens). Incomplete themes are rejected during registry build and surfaced in diagnostics
+- Extra tokens prefixed with `--continuum-` are allowed for forward compatibility
+- The `preview_colors` list requires 3-5 hex color strings (`#rgb` or `#rrggbb`) used for swatch display in the selector
+- The optional `tags` field (e.g., `tags = ["accessibility"]`) provides metadata for labeling in the selector UI
 - See the [CSS Variables](#css-variables) section for the full list of available tokens
 
 ## Python Entrypoint

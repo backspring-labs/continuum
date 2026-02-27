@@ -115,3 +115,22 @@ class DiagnosticContribution:
     id: str
     health_check: str = ""  # Health check function reference
     version_info: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class ThemeContribution:
+    """
+    A theme contribution providing a complete set of CSS custom property overrides.
+
+    Every theme must provide all tokens listed in REQUIRED_THEME_TOKENS.
+    """
+
+    id: str
+    name: str
+    description: str
+    category: str  # "dark" or "light"
+    preview_colors: list[str] = field(default_factory=list)  # 3-5 hex colors
+    tokens: dict[str, str] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    plugin_id: str = ""  # Empty for built-in themes
+    builtin: bool = False

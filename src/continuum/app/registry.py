@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from continuum.domain.regions import get_all_regions, get_region, Cardinality
+from continuum.domain.themes import BUILTIN_THEMES, validate_theme
 
 
 @dataclass
@@ -35,6 +36,7 @@ class ResolvedRegistry:
 
     slots: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     commands: list[dict[str, Any]] = field(default_factory=list)
+    themes: list[dict[str, Any]] = field(default_factory=list)
     fingerprint: str = ""
     report: RegistryBuildReport = field(default_factory=RegistryBuildReport)
 
@@ -75,12 +77,15 @@ def build_registry(contributions: list[dict[str, Any]]) -> ResolvedRegistry:
     # Group contributions by type and slot
     slot_contributions: dict[str, list[dict[str, Any]]] = {}
     commands: list[dict[str, Any]] = []
+    plugin_themes: list[dict[str, Any]] = []
 
     for contrib in contributions:
         contrib_type = contrib.get("type")
 
         if contrib_type == "command":
             commands.append(contrib)
+        elif contrib_type == "theme":
+            plugin_themes.append(contrib)
         elif contrib_type in ("nav", "panel", "drawer", "diagnostic"):
             slot_id = contrib.get("slot")
             if slot_id:
@@ -125,6 +130,9 @@ def build_registry(contributions: list[dict[str, Any]]) -> ResolvedRegistry:
     # Process commands
     registry.commands = _sort_contributions(commands)
 
+    # Process themes: validate, resolve duplicates, merge with built-ins
+    registry.themes = _resolve_themes(plugin_themes, report)
+
     # Check for missing required slots
     for region in get_all_regions():
         if region.required and not registry.slots.get(region.slot_id):
@@ -160,5 +168,71 @@ def _calculate_fingerprint(registry: ResolvedRegistry) -> str:
     for cmd in registry.commands:
         content_parts.append(f"cmd:{cmd.get('id', '')}:{cmd.get('plugin_id', '')}")
 
+    # Include themes
+    for theme in registry.themes:
+        content_parts.append(f"theme:{theme.get('id', '')}:{theme.get('plugin_id', '')}")
+
     content = "|".join(content_parts)
     return hashlib.sha256(content.encode()).hexdigest()[:16]
+
+
+def _resolve_themes(
+    plugin_themes: list[dict[str, Any]],
+    report: RegistryBuildReport,
+) -> list[dict[str, Any]]:
+    """
+    Resolve themes: validate, handle duplicates, merge with built-ins.
+
+    Precedence for duplicate IDs (same rules as slot contributions):
+    - Plugin themes override built-in themes with the same ID
+    - Among plugins, higher priority wins; ties broken by discovery_index (lower wins)
+    - Losers are logged as conflicts in the build report
+    """
+    resolved: list[dict[str, Any]] = []
+
+    # Validate and collect valid plugin themes, keyed by ID
+    valid_plugin_themes: dict[str, list[dict[str, Any]]] = {}
+    for theme in plugin_themes:
+        errors = validate_theme(theme)
+        if errors:
+            report.errors.extend(errors)
+            continue
+        theme_id = theme["id"]
+        if theme_id not in valid_plugin_themes:
+            valid_plugin_themes[theme_id] = []
+        valid_plugin_themes[theme_id].append(theme)
+
+    # Resolve duplicate plugin theme IDs using priority/discovery_index
+    plugin_winners: dict[str, dict[str, Any]] = {}
+    for theme_id, candidates in valid_plugin_themes.items():
+        sorted_candidates = _sort_contributions(candidates)
+        winner = sorted_candidates[0]
+        plugin_winners[theme_id] = winner
+        if len(sorted_candidates) > 1:
+            losers = sorted_candidates[1:]
+            conflict = Conflict(
+                slot_id=f"theme:{theme_id}",
+                winner=winner,
+                losers=losers,
+            )
+            report.conflicts.append(conflict)
+            report.warnings.append(
+                f"Theme '{theme_id}' conflict: {winner.get('plugin_id')} "
+                f"(priority={winner.get('priority', 100)}, index={winner.get('discovery_index')}) "
+                f"wins over {len(losers)} other(s)"
+            )
+
+    # Merge: built-in themes first, plugin themes override by ID
+    overridden_builtin_ids = set(plugin_winners.keys())
+    for builtin in BUILTIN_THEMES:
+        if builtin["id"] in overridden_builtin_ids:
+            # Plugin overrides this built-in
+            resolved.append(plugin_winners.pop(builtin["id"]))
+        else:
+            resolved.append(dict(builtin))
+
+    # Append remaining plugin themes (non-overriding) sorted by priority
+    remaining = _sort_contributions(list(plugin_winners.values()))
+    resolved.extend(remaining)
+
+    return resolved
