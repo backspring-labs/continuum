@@ -623,6 +623,10 @@ The existing `app.css` `:root` tokens. Always available. What you get when no th
 - `web/src/lib/components/Shell.svelte` — Add `restoreTheme()` call, event listener, `<ThemeSelector>` in footer
 - `web/src/app.html` — Add inline FOUC prevention script (5 lines)
 
+### Documentation (Modified)
+
+- `docs/plugin-quickstart.md` — Add "Themes" contribution type section with manifest + `__init__.py` examples
+
 ### Nothing Created in `plugins/`
 
 No theme plugin ships with Continuum. The `plugins/` directory is unchanged.
