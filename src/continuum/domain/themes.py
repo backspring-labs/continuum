@@ -1,7 +1,7 @@
 """
 Built-in theme definitions and token contract.
 
-The core framework ships three built-in themes so theming works immediately
+The core framework ships two built-in themes so theming works immediately
 with zero plugins installed. Plugins can contribute additional themes via
 [[contributions.theme]], or override a built-in by contributing a theme
 with the same ID.
@@ -39,7 +39,6 @@ REQUIRED_THEME_TOKENS: tuple[str, ...] = (
 BUILTIN_THEME_IDS: frozenset[str] = frozenset({
     "default-dark",
     "light",
-    "high-contrast",
 })
 
 BUILTIN_THEMES: list[dict] = [
@@ -99,35 +98,6 @@ BUILTIN_THEMES: list[dict] = [
             "--continuum-shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.08)",
             "--continuum-shadow-md": "0 4px 12px rgba(0, 0, 0, 0.1)",
             "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.12)",
-        },
-    },
-    {
-        "id": "high-contrast",
-        "name": "High Contrast",
-        "description": "Maximum contrast for accessibility",
-        "category": "dark",
-        "builtin": True,
-        "tags": ["accessibility"],
-        "preview_colors": ["#000000", "#0a0a0a", "#409eff", "#ffffff", "#34d058"],
-        "tokens": {
-            "--continuum-bg-primary": "#000000",
-            "--continuum-bg-secondary": "#0a0a0a",
-            "--continuum-bg-tertiary": "#1a1a1a",
-            "--continuum-bg-hover": "#2a2a2a",
-            "--continuum-bg-active": "#409eff33",
-            "--continuum-border": "#505050",
-            "--continuum-border-muted": "#333333",
-            "--continuum-text-primary": "#ffffff",
-            "--continuum-text-secondary": "#f0f0f0",
-            "--continuum-text-muted": "#b0b0b0",
-            "--continuum-text-link": "#409eff",
-            "--continuum-accent-primary": "#409eff",
-            "--continuum-accent-success": "#34d058",
-            "--continuum-accent-warning": "#ffdf5d",
-            "--continuum-accent-danger": "#ff4444",
-            "--continuum-shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.5)",
-            "--continuum-shadow-md": "0 4px 12px rgba(0, 0, 0, 0.6)",
-            "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.7)",
         },
     },
 ]
