@@ -91,6 +91,21 @@ class DiagnosticContributionManifest(BaseModel):
     check: str  # Health check endpoint or function
 
 
+class ThemeContributionManifest(BaseModel):
+    """Theme contribution in manifest.
+
+    Declares theme metadata. Token maps are registered via
+    ctx.register_contribution("theme", {...}) in the plugin's __init__.py.
+    """
+
+    id: str
+    name: str
+    description: str = ""
+    category: str = Field(default="dark", pattern="^(dark|light)$")
+    preview_colors: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+
+
 class ContributionsManifest(BaseModel):
     """All contributions from a plugin."""
 
@@ -99,6 +114,7 @@ class ContributionsManifest(BaseModel):
     drawer: list[DrawerContributionManifest] = Field(default_factory=list)
     command: list[CommandContributionManifest] = Field(default_factory=list)
     diagnostic: list[DiagnosticContributionManifest] = Field(default_factory=list)
+    theme: list[ThemeContributionManifest] = Field(default_factory=list)
 
 
 class PluginUIManifest(BaseModel):

@@ -99,9 +99,9 @@ class TestPluginLoader:
         discovery = discover_plugins("./plugins")
         load_result = load_plugins(discovery.plugins)
 
-        # Check that sample_nav registered 7 contributions
+        # Check that sample_nav registered 5 contributions (perspective switchers only)
         nav_plugin = next(p for p in load_result.plugins if p.plugin_id == "continuum.sample_nav")
-        assert len(nav_plugin.contributions) == 7
+        assert len(nav_plugin.contributions) == 5
 
 
 class TestPluginContext:
@@ -195,14 +195,14 @@ class TestIntegration:
         all_contributions = []
         for loaded in load_result.plugins:
             all_contributions.extend(loaded.contributions)
-        assert len(all_contributions) == 24  # Total from all sample plugins
+        assert len(all_contributions) == 22  # Total from all sample plugins
 
         # Build registry
         registry = build_registry(all_contributions)
 
-        # Verify left_nav has 7 items in correct priority order
+        # Verify left_nav has 5 items in correct priority order
         left_nav = registry.slots["ui.slot.left_nav"]
-        assert len(left_nav) == 7
+        assert len(left_nav) == 5
         priorities = [c.get("priority", 100) for c in left_nav]
         assert priorities == sorted(priorities, reverse=True)  # Descending order
 

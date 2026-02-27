@@ -5,6 +5,39 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Continuum</title>
+		<script>
+			// FOUC prevention: restore cached theme tokens before first paint.
+			// The full token map is cached in localStorage by themeEngine.ts on every
+			// theme apply. This script reads and injects them inline so the page renders
+			// with the correct colors immediately, before SvelteKit/registry load.
+			(function() {
+				try {
+					var pref = localStorage.getItem('continuum-theme-pref');
+					var cached = localStorage.getItem('continuum-theme-tokens');
+					if (pref && cached) {
+						var p = JSON.parse(pref);
+						if (p && p.themeId) {
+							document.documentElement.setAttribute('data-theme', p.themeId);
+						}
+						var tokens = JSON.parse(cached);
+						if (tokens && typeof tokens === 'object') {
+							var rules = '';
+							for (var key in tokens) {
+								if (tokens.hasOwnProperty(key)) {
+									rules += '  ' + key + ': ' + tokens[key] + ';\n';
+								}
+							}
+							if (rules) {
+								var style = document.createElement('style');
+								style.id = 'continuum-theme-overrides';
+								style.textContent = ':root {\n' + rules + '}';
+								document.head.appendChild(style);
+							}
+						}
+					}
+				} catch(e) {}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

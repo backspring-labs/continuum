@@ -12,22 +12,56 @@
 		rightRailPanels,
 		drawerContributions,
 		commands,
+		themes,
+		activeThemeId,
 		setPerspective,
 		type Contribution
 	} from '$stores/registry';
+	import { restoreTheme, applyTheme, savePreference, type ThemePreference } from '$lib/services/themeEngine';
 	import RegionSlot from './RegionSlot.svelte';
 	import NavItem from './NavItem.svelte';
 	import CommandPalette from './CommandPalette.svelte';
 	import Drawer from './Drawer.svelte';
 	import ConfirmDialog from './ConfirmDialog.svelte';
+	import ThemeSelector from './ThemeSelector.svelte';
 
 	let showCommandPalette = false;
 	let showLogoutDialog = false;
 	let showDecorators = false;
 	let activeDrawer: Contribution | null = null;
+	let themeCleanup: (() => void) | null = null;
+	let themeRestored = false;
+
+	// Restore theme once after registry loads (gated by themeRestored flag)
+	$: if ($themes.length > 0 && !themeRestored) {
+		themeRestored = true;
+		if (themeCleanup) themeCleanup();
+		const result = restoreTheme($themes);
+		activeThemeId.set(result.appliedId);
+		themeCleanup = result.cleanup;
+	}
+
+	function handleThemeChange(themeId: string, _pref: ThemePreference) {
+		activeThemeId.set(themeId);
+	}
 
 	onMount(() => {
 		fetchRegistry();
+
+		// Listen for plugin-initiated theme changes (v1 integration contract)
+		function handleThemeApply(e: Event) {
+			const detail = (e as CustomEvent).detail;
+			const themeId = detail?.themeId;
+			if (typeof themeId === 'string') {
+				const theme = $themes.find(t => t.id === themeId);
+				if (theme) {
+					applyTheme(theme);
+					savePreference({ mode: 'explicit', themeId: theme.id });
+					activeThemeId.set(theme.id);
+				}
+			}
+		}
+		window.addEventListener('continuum:theme-apply', handleThemeApply);
 
 		// Keyboard shortcuts
 		function handleKeydown(e: KeyboardEvent) {
@@ -54,6 +88,8 @@
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
 			window.removeEventListener('keyup', handleKeyup);
+			window.removeEventListener('continuum:theme-apply', handleThemeApply);
+			if (themeCleanup) themeCleanup();
 		};
 	});
 
@@ -180,6 +216,8 @@
 				<span>Fingerprint: {$registry?.registry_fingerprint ?? ''}</span>
 			</div>
 			<div class="footer-right">
+				<ThemeSelector themes={$themes} activeThemeId={$activeThemeId} onThemeChange={handleThemeChange} />
+				<span class="footer-separator"></span>
 				<span class="system-status" class:ready={$registry?.lifecycle_state === 'ready'} class:degraded={$registry?.lifecycle_state === 'degraded'}>
 					<span class="status-dot"></span>
 					System Status
@@ -423,6 +461,13 @@
 	.footer-right {
 		display: flex;
 		align-items: center;
+		gap: 4px;
+	}
+
+	.footer-separator {
+		width: 1px;
+		height: 14px;
+		background: var(--continuum-border-muted);
 	}
 
 	/* Design decorators (Cmd+D) */

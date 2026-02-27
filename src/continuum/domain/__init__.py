@@ -11,6 +11,7 @@ from continuum.domain.contributions import (
     DrawerContribution,
     CommandContribution,
     DiagnosticContribution,
+    ThemeContribution,
     DangerLevel,
     NavTarget,
     NavTargetType,
@@ -20,6 +21,12 @@ from continuum.domain.manifest import (
     ManifestValidationResult,
     validate_manifest,
     load_manifest_from_toml,
+)
+from continuum.domain.themes import (
+    REQUIRED_THEME_TOKENS,
+    BUILTIN_THEME_IDS,
+    BUILTIN_THEMES,
+    validate_theme,
 )
 
 __all__ = [
@@ -38,6 +45,7 @@ __all__ = [
     "DrawerContribution",
     "CommandContribution",
     "DiagnosticContribution",
+    "ThemeContribution",
     "DangerLevel",
     "NavTarget",
     "NavTargetType",
@@ -45,4 +53,8 @@ __all__ = [
     "ManifestValidationResult",
     "validate_manifest",
     "load_manifest_from_toml",
+    "REQUIRED_THEME_TOKENS",
+    "BUILTIN_THEME_IDS",
+    "BUILTIN_THEMES",
+    "validate_theme",
 ]

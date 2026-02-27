@@ -101,6 +101,66 @@ title = "My Drawer Title"            # Optional: display title
 width = "400px"                      # Optional: width (default: "400px")
 ```
 
+### Themes
+
+Add custom themes that appear in the shell's footer theme selector:
+
+```toml
+[[contributions.theme]]
+id = "myapp-dark"
+name = "My App Dark"
+description = "Branded dark theme"
+category = "dark"                    # "dark" or "light"
+preview_colors = ["#1a1a2e", "#16213e", "#0f3460", "#e94560", "#533483"]
+
+[[contributions.theme]]
+id = "myapp-light"
+name = "My App Light"
+description = "Branded light theme"
+category = "light"
+preview_colors = ["#fafafa", "#f0f0f5", "#0f3460", "#1a1a2e", "#2ecc71"]
+```
+
+The manifest declares theme metadata. Token maps (the actual CSS custom property overrides) are registered in `__init__.py` via `ctx.register_contribution("theme", ...)` because TOML isn't ideal for large key-value maps:
+
+```python
+MYAPP_DARK_TOKENS = {
+    "--continuum-bg-primary": "#1a1a2e",
+    "--continuum-bg-secondary": "#16213e",
+    "--continuum-bg-tertiary": "#1e2a4a",
+    "--continuum-bg-hover": "#2a3a5a",
+    "--continuum-bg-active": "#e945601a",
+    "--continuum-border": "#2a3a5a",
+    "--continuum-border-muted": "#1e2a4a",
+    "--continuum-text-primary": "#e0e0e0",
+    "--continuum-text-secondary": "#a0a0b0",
+    "--continuum-text-muted": "#707080",
+    "--continuum-text-link": "#e94560",
+    "--continuum-accent-primary": "#e94560",
+    "--continuum-accent-success": "#2ecc71",
+    "--continuum-accent-warning": "#f39c12",
+    "--continuum-accent-danger": "#e74c3c",
+    "--continuum-shadow-sm": "0 1px 2px rgba(0, 0, 0, 0.3)",
+    "--continuum-shadow-md": "0 4px 12px rgba(0, 0, 0, 0.4)",
+    "--continuum-shadow-lg": "0 8px 24px rgba(0, 0, 0, 0.5)",
+}
+
+def register(ctx):
+    ctx.register_contribution("theme", {
+        "id": "myapp-dark",
+        "tokens": MYAPP_DARK_TOKENS,
+    })
+```
+
+**Notes:**
+- Themes contributed by plugins appear in the footer selector automatically alongside the built-in themes (Default Dark, Light)
+- Contributing a theme with the same ID as a built-in (e.g., `id = "light"`) overrides the built-in version. Built-in IDs are: `default-dark`, `light`. Use namespaced IDs for your themes (e.g., `myapp-dark`)
+- Themes must provide **all** required tokens (all 18 `--continuum-*` color/shadow tokens). Incomplete themes are rejected during registry build and surfaced in diagnostics
+- Extra tokens prefixed with `--continuum-` are allowed for forward compatibility
+- The `preview_colors` list requires 3-5 hex color strings (`#rgb` or `#rrggbb`) used for swatch display in the selector
+- The optional `tags` field (e.g., `tags = ["accessibility"]`) provides metadata for labeling in the selector UI
+- See the [CSS Variables](#css-variables) section for the full list of available tokens
+
 ## Python Entrypoint
 
 Every plugin needs an `__init__.py` with a `register` function:
