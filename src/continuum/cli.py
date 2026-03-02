@@ -20,8 +20,8 @@ def main() -> None:
     run_parser.add_argument(
         "--port",
         type=int,
-        default=int(os.environ.get("CONTINUUM_PORT", "4040")),
-        help="Port to listen on (default: 4040)",
+        default=int(os.environ.get("CONTINUUM_PORT", "4041")),
+        help="Port to listen on (default: 4041)",
     )
     run_parser.add_argument(
         "--host",
@@ -39,8 +39,8 @@ def main() -> None:
     dev_parser.add_argument(
         "--port",
         type=int,
-        default=int(os.environ.get("CONTINUUM_PORT", "4040")),
-        help="Port to listen on (default: 4040)",
+        default=int(os.environ.get("CONTINUUM_PORT", "4041")),
+        help="Port to listen on (default: 4041)",
     )
 
     # Inspect command

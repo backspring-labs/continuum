@@ -51,7 +51,7 @@ def client_with_limited_user(limited_user):
 
 
 # Playwright fixtures for E2E tests
-# These require both backend (port 4040) and frontend (port 5173) to be running
+# These require both backend (port 4041) and frontend (port 5173) to be running
 
 @pytest.fixture(scope="session")
 def browser_context_args():
@@ -68,7 +68,7 @@ def e2e_page(page):
     Playwright page fixture for E2E tests.
 
     Requires servers to be running:
-    - Backend: continuum serve (port 4040)
+    - Backend: continuum serve (port 4041)
     - Frontend: cd web && npm run dev (port 5173)
 
     Usage in tests:

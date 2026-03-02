@@ -45,7 +45,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=[
             "http://localhost:5173",  # Vite dev server
-            "http://localhost:4040",  # Production
+            "http://localhost:4041",  # Production
             "capacitor://localhost",  # iOS Capacitor
         ],
         allow_credentials=True,

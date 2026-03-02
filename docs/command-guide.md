@@ -193,7 +193,7 @@ ctx.register_contribution("command", {
 
 ```bash
 # Via API
-curl http://localhost:4040/api/commands/audit?limit=50
+curl http://localhost:4041/api/commands/audit?limit=50
 
 # In UI
 # Navigate to Systems > Audit panel

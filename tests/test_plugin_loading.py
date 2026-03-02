@@ -126,13 +126,13 @@ class TestPluginBundleContent:
 
 # E2E tests that require a browser (Playwright) and running servers
 # Run with: pytest tests/test_plugin_loading.py::TestE2ECustomElements -v
-# Requires: backend (port 4040) and frontend (port 5173) running
+# Requires: backend (port 4041) and frontend (port 5173) running
 
 def _servers_running():
     """Check if both backend and frontend servers are running."""
     import urllib.request
     import urllib.error
-    urls = ["http://localhost:4040/health", "http://localhost:5173"]
+    urls = ["http://localhost:4041/health", "http://localhost:5173"]
     for url in urls:
         try:
             req = urllib.request.Request(url, method='GET')
@@ -143,7 +143,7 @@ def _servers_running():
     return True
 
 
-@pytest.mark.skipif(not _servers_running(), reason="Requires backend (4040) and frontend (5173) servers running")
+@pytest.mark.skipif(not _servers_running(), reason="Requires backend (4041) and frontend (5173) servers running")
 class TestE2ECustomElements:
     """E2E tests for custom element rendering in the browser."""
 

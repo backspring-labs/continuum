@@ -248,7 +248,7 @@ const health = await fetch('/health').then(r => r.json());
 If your plugin UI fails to load, check:
 
 1. **Bundle exists**: Verify `plugins/{id}/dist/plugin.js` was built
-2. **Server running**: Test `curl http://localhost:4040/plugins/{id}/assets/plugin.js`
+2. **Server running**: Test `curl http://localhost:4041/plugins/{id}/assets/plugin.js`
 3. **Console errors**: Check browser devtools for JavaScript errors
 4. **Element name**: Ensure the customElement name matches the contribution component
 5. **Bundle syntax**: Verify the bundle compiles without errors

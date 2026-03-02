@@ -38,11 +38,11 @@ cd web && npm install && cd ..
 continuum run --reload
 
 # Or run API and frontend separately for development:
-continuum dev          # Terminal 1: API on :4040
+continuum dev          # Terminal 1: API on :4041
 cd web && npm run dev  # Terminal 2: Vite on :5173
 ```
 
-Open http://localhost:4040 (or :5173 in dev mode).
+Open http://localhost:4041 (or :5173 in dev mode).
 
 ## Project Structure
 
@@ -107,7 +107,7 @@ See [docs/command-guide.md](docs/command-guide.md) for details.
 ## CLI
 
 ```bash
-continuum run [--port 4040] [--reload]  # Start server
+continuum run [--port 4041] [--reload]  # Start server
 continuum dev                            # Dev mode (API only)
 continuum inspect [--json]               # Inspect plugins and registry
 ```
