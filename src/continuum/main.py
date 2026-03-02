@@ -10,6 +10,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from continuum import __version__
 from continuum.app.runtime import ContinuumRuntime
 from continuum.adapters.web.api import router as api_router
 
@@ -33,7 +34,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Continuum",
         description="Plugin-driven control-plane UI shell",
-        version="1.0.0",
+        version=__version__,
         lifespan=lifespan,
     )
 

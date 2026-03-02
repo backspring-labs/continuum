@@ -1,6 +1,6 @@
 [project]
 name = "continuum"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Plugin-driven control-plane UI shell"
 requires-python = ">=3.11"
 dependencies = [
@@ -32,6 +32,9 @@ continuum = "continuum.cli:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/continuum/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/continuum"]
