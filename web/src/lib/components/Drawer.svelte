@@ -46,7 +46,12 @@
 	>
 		<header class="drawer-header">
 			<h2>{contribution.title ?? contribution.id}</h2>
-			<button class="close-btn" onclick={onClose}>\u00d7</button>
+			<button class="close-btn" onclick={onClose} aria-label="Close">
+				<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+					<line x1="3" y1="3" x2="13" y2="13" />
+					<line x1="13" y1="3" x2="3" y2="13" />
+				</svg>
+			</button>
 		</header>
 		<div class="drawer-content">
 			<ComponentLoader {contribution} />
