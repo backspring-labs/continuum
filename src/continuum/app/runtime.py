@@ -15,7 +15,7 @@ from continuum.app.discovery import discover_plugins, DiscoveredPlugin
 from continuum.app.loader import load_plugins, LoadedPlugin
 from continuum.app.registry import build_registry, ResolvedRegistry
 from continuum.app.command_bus import CommandBus
-from continuum.app.bundles import AssetVersions
+from continuum.app.bundles import content_version
 
 
 @dataclass
@@ -64,7 +64,6 @@ class ContinuumRuntime:
         self._loaded_plugins: list[LoadedPlugin] = []
         self._resolved_registry: ResolvedRegistry | None = None
         self._command_bus = CommandBus()
-        self._asset_versions = AssetVersions()
 
     async def boot(self) -> None:
         """
@@ -234,7 +233,12 @@ class ContinuumRuntime:
     # Registry access methods
 
     def get_registry_fingerprint(self) -> str:
-        """Get the registry fingerprint."""
+        """Get the registry fingerprint.
+
+        It identifies the resolved contributions, commands and themes, fixed at boot. It does
+        not cover the bytes of plugin bundles: each ``bundle_url`` carries its own version,
+        taken from the file whenever the registry is read.
+        """
         return self._registry.fingerprint
 
     def get_perspectives(self) -> list[dict[str, Any]]:
@@ -286,7 +290,7 @@ class ContinuumRuntime:
 
     def asset_version(self, path: Path) -> str | None:
         """The content version of an asset file, or None when it can't be read."""
-        return self._asset_versions.version_of(path)
+        return content_version(path)
 
     def get_commands(self) -> list[dict[str, Any]]:
         """Get registered commands."""

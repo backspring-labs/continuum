@@ -5,13 +5,14 @@ A bundle is served from one path on every deploy. Without a version in the URL, 
 browser holding the old file can keep using it after a rebuild.
 """
 
+import os
 import shutil
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from continuum.app.bundles import AssetVersions
+from continuum.app.bundles import content_version
 from continuum.main import create_app
 
 SAMPLE = Path(__file__).parents[1] / "plugins" / "continuum.sample_signal"
@@ -108,13 +109,22 @@ def test_a_missing_bundle_has_an_unversioned_url_and_answers_404(client, plugins
     assert client.get(url).status_code == 404
 
 
-def test_a_version_follows_the_bytes(tmp_path):
-    versions = AssetVersions()
-    asset = tmp_path / "plugin.js"
-    asset.write_text("a")
-    before = versions.version_of(asset)
+def test_a_rebuild_keeping_length_and_timestamp_still_gets_a_new_url(client, plugins_root):
+    """A rebuild can write same-length bytes under a preserved mtime: metadata can't stand in."""
+    bundle = plugins_root / "dist" / "plugin.js"
+    first = bundle_url(client)
+    stamp = bundle.stat()
 
-    asset.write_text("bb")
+    bundle.write_text("export const build = 9;\n")
+    os.utime(bundle, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+    assert (bundle.stat().st_size, bundle.stat().st_mtime_ns) == (stamp.st_size, stamp.st_mtime_ns)
+    second = bundle_url(client)
 
-    assert versions.version_of(asset) != before
-    assert versions.version_of(tmp_path / "absent.js") is None
+    assert second != first
+    assert client.get(second).headers["cache-control"] == "public, max-age=31536000, immutable"
+    assert client.get(first).headers["cache-control"] == "no-cache"
+
+
+def test_an_unreadable_asset_has_no_version(tmp_path):
+    assert content_version(tmp_path / "absent.js") is None
+    assert content_version(tmp_path) is None
