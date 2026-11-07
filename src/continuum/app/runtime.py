@@ -3,6 +3,7 @@ Continuum Runtime - orchestrates lifecycle, plugins, and registry.
 """
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from continuum.domain.lifecycle import LifecycleManager, LifecycleState
@@ -14,6 +15,7 @@ from continuum.app.discovery import discover_plugins, DiscoveredPlugin
 from continuum.app.loader import load_plugins, LoadedPlugin
 from continuum.app.registry import build_registry, ResolvedRegistry
 from continuum.app.command_bus import CommandBus
+from continuum.app.bundles import content_version
 
 
 @dataclass
@@ -231,7 +233,12 @@ class ContinuumRuntime:
     # Registry access methods
 
     def get_registry_fingerprint(self) -> str:
-        """Get the registry fingerprint."""
+        """Get the registry fingerprint.
+
+        It identifies the resolved contributions, commands and themes, fixed at boot. It does
+        not cover the bytes of plugin bundles: each ``bundle_url`` carries its own version,
+        taken from the file whenever the registry is read.
+        """
         return self._registry.fingerprint
 
     def get_perspectives(self) -> list[dict[str, Any]]:
@@ -257,7 +264,9 @@ class ContinuumRuntime:
         for discovered in self._discovered_plugins:
             bundle = discovered.manifest.plugin.ui.bundle
             if bundle:
-                bundle_urls[discovered.plugin_id] = f"/plugins/{discovered.plugin_id}/assets/{bundle}"
+                url = f"/plugins/{discovered.plugin_id}/assets/{bundle}"
+                version = self.asset_version(self.plugin_asset_path(discovered.plugin_id, bundle))
+                bundle_urls[discovered.plugin_id] = f"{url}?v={version}" if version else url
             else:
                 bundle_urls[discovered.plugin_id] = None
 
@@ -274,6 +283,14 @@ class ContinuumRuntime:
             result[slot_id] = augmented_contributions
 
         return result
+
+    def plugin_asset_path(self, plugin_id: str, path: str) -> Path:
+        """Where a plugin's asset lives on disk; the assets route validates it before serving."""
+        return Path(self._plugins_dir) / plugin_id / "dist" / path
+
+    def asset_version(self, path: Path) -> str | None:
+        """The content version of an asset file, or None when it can't be read."""
+        return content_version(path)
 
     def get_commands(self) -> list[dict[str, Any]]:
         """Get registered commands."""

@@ -5,8 +5,9 @@ Continuum Web API - FastAPI routes.
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Request, HTTPException, Depends
+from fastapi import APIRouter, Request, Response, HTTPException, Depends
 from fastapi.responses import FileResponse
+from starlette.staticfiles import NotModifiedResponse
 from pydantic import BaseModel, Field
 
 from continuum.domain.lifecycle import LifecycleState
@@ -130,10 +131,18 @@ async def diagnostics(request: Request) -> DiagnosticsResponse:
     )
 
 
+# A versioned asset URL names one file's bytes, so its response can be kept for good.
+CACHE_VERSIONED = "public, max-age=31536000, immutable"
+# Anything else may change in place: a browser keeps it but asks before reusing it.
+CACHE_REVALIDATE = "no-cache"
+
+
 @router.get("/api/registry", response_model=RegistryResponse)
-async def registry(request: Request) -> RegistryResponse:
+async def registry(request: Request, response: Response) -> RegistryResponse:
     """Registry payload endpoint."""
     runtime = request.app.state.runtime
+    # It carries each bundle's version, so a stale copy would load stale bundles.
+    response.headers["Cache-Control"] = CACHE_REVALIDATE
 
     # Get regions and augment contributions with bundle_url
     regions = runtime.get_regions_with_bundle_urls()
@@ -155,12 +164,14 @@ async def registry(request: Request) -> RegistryResponse:
 
 
 @router.get("/plugins/{plugin_id}/assets/{path:path}")
-async def plugin_assets(plugin_id: str, path: str, request: Request) -> FileResponse:
+async def plugin_assets(plugin_id: str, path: str, request: Request) -> Response:
     """
     Serve static assets from plugin dist directories.
 
     This enables dynamic loading of plugin UI bundles without compile-time
-    coupling between the shell and plugins.
+    coupling between the shell and plugins. A request whose ``v`` matches the
+    file's content version may be cached for good; any other is revalidated,
+    and an unchanged file answers 304.
     """
     runtime = request.app.state.runtime
     plugins_dir = Path(runtime._plugins_dir)
@@ -174,7 +185,7 @@ async def plugin_assets(plugin_id: str, path: str, request: Request) -> FileResp
         raise HTTPException(status_code=400, detail="Invalid path")
 
     # Construct the asset path
-    asset_path = plugins_dir / plugin_id / "dist" / path
+    asset_path = runtime.plugin_asset_path(plugin_id, path)
 
     # Verify the path is within the expected directory
     try:
@@ -203,7 +214,25 @@ async def plugin_assets(plugin_id: str, path: str, request: Request) -> FileResp
     elif suffix == ".map":
         content_type = "application/json"
 
-    return FileResponse(asset_path, media_type=content_type)
+    response = FileResponse(asset_path, media_type=content_type, stat_result=asset_path.stat())
+    requested = request.query_params.get("v")
+    versioned = requested is not None and requested == runtime.asset_version(asset_path)
+    response.headers["Cache-Control"] = CACHE_VERSIONED if versioned else CACHE_REVALIDATE
+    if _not_modified(request, response):
+        return NotModifiedResponse(response.headers)
+    return response
+
+
+def _not_modified(request: Request, response: Response) -> bool:
+    """The request's If-None-Match names this response's ETag."""
+    etag = response.headers.get("etag")
+    if_none_match = request.headers.get("if-none-match")
+    if not etag or not if_none_match:
+        return False
+    if if_none_match.strip() == "*":
+        return True
+    named = [tag.strip().removeprefix("W/") for tag in if_none_match.split(",")]
+    return etag.removeprefix("W/") in named
 
 
 @router.post("/api/commands/execute", response_model=CommandExecuteResponse)

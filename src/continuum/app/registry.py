@@ -153,6 +153,9 @@ def _calculate_fingerprint(registry: ResolvedRegistry) -> str:
     - Contributions change
     - Ordering changes
     - Commands change
+
+    It does not change when a plugin bundle is rebuilt: a bundle's version is in its
+    ``bundle_url``, read from the file on each registry request.
     """
     content_parts = []
 
