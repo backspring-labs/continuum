@@ -3,6 +3,7 @@ Continuum Runtime - orchestrates lifecycle, plugins, and registry.
 """
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from continuum.domain.lifecycle import LifecycleManager, LifecycleState
@@ -14,6 +15,7 @@ from continuum.app.discovery import discover_plugins, DiscoveredPlugin
 from continuum.app.loader import load_plugins, LoadedPlugin
 from continuum.app.registry import build_registry, ResolvedRegistry
 from continuum.app.command_bus import CommandBus
+from continuum.app.bundles import AssetVersions
 
 
 @dataclass
@@ -62,6 +64,7 @@ class ContinuumRuntime:
         self._loaded_plugins: list[LoadedPlugin] = []
         self._resolved_registry: ResolvedRegistry | None = None
         self._command_bus = CommandBus()
+        self._asset_versions = AssetVersions()
 
     async def boot(self) -> None:
         """
@@ -257,7 +260,9 @@ class ContinuumRuntime:
         for discovered in self._discovered_plugins:
             bundle = discovered.manifest.plugin.ui.bundle
             if bundle:
-                bundle_urls[discovered.plugin_id] = f"/plugins/{discovered.plugin_id}/assets/{bundle}"
+                url = f"/plugins/{discovered.plugin_id}/assets/{bundle}"
+                version = self.asset_version(self.plugin_asset_path(discovered.plugin_id, bundle))
+                bundle_urls[discovered.plugin_id] = f"{url}?v={version}" if version else url
             else:
                 bundle_urls[discovered.plugin_id] = None
 
@@ -274,6 +279,14 @@ class ContinuumRuntime:
             result[slot_id] = augmented_contributions
 
         return result
+
+    def plugin_asset_path(self, plugin_id: str, path: str) -> Path:
+        """Where a plugin's asset lives on disk; the assets route validates it before serving."""
+        return Path(self._plugins_dir) / plugin_id / "dist" / path
+
+    def asset_version(self, path: Path) -> str | None:
+        """The content version of an asset file, or None when it can't be read."""
+        return self._asset_versions.version_of(path)
 
     def get_commands(self) -> list[dict[str, Any]]:
         """Get registered commands."""
